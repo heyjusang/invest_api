@@ -15,7 +15,7 @@ class SecurityConfiguration(val jwtAuthenticationFilter: JwtAuthenticationFilter
             .csrf().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
-            .authorizeRequests().antMatchers("/signin").permitAll()
+            .authorizeRequests().antMatchers("/signin", "/signup").permitAll()
             .antMatchers(HttpMethod.GET, "/products").permitAll()
             .anyRequest().hasRole("USER")
             .and()

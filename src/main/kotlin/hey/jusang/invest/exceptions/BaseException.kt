@@ -16,3 +16,12 @@ class TotalInvestingAmountExceededException : BaseException(
     HttpStatus.BAD_REQUEST,
     "Amount exceeded total investing amount"
 )
+
+class UserAlreadyExistedException :
+    BaseException(ErrorCode.USER_ALREADY_EXISTED, HttpStatus.BAD_REQUEST, "User is already existed")
+
+class UserNotFoundException :
+    BaseException(ErrorCode.USER_NOT_FOUND, HttpStatus.NOT_FOUND, "User does not exist")
+
+class WrongPasswordException :
+    BaseException(ErrorCode.WRONG_PASSWORD, HttpStatus.UNAUTHORIZED, "Wrong password is given")
