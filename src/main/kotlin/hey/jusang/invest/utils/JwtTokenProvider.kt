@@ -4,7 +4,6 @@ import hey.jusang.invest.models.User
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -20,19 +19,19 @@ import javax.servlet.http.HttpServletRequest
 
 @Component
 class JwtTokenProvider {
-    @Value("spring.jwt.secret")
-    private lateinit var secretKey: String
+    @Value("\${spring.jwt.secret}")
+    private lateinit var secret: String
+    private lateinit var key: Key
     private val expiration: Long = 1000 * 60 * 60
 
     @PostConstruct
     fun init() {
-        Base64.getEncoder().encodeToString(secretKey.toByteArray()).also { secretKey = it }
+        key = Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
     fun createToken(user: User): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(user.id.toString())
-        val key: Key = Keys.secretKeyFor(SignatureAlgorithm.HS256)
         claims["name"] = user.name
         claims["password"] = user.password
         claims["role"] = user.role
@@ -46,7 +45,7 @@ class JwtTokenProvider {
     }
 
     fun getAuthentication(token: String): Authentication {
-        val claims: Claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).body
+        val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
         val grantedAuthority: GrantedAuthority = SimpleGrantedAuthority(claims["role"] as String?)
 
         return UsernamePasswordAuthenticationToken(claims["name"], claims["password"], listOf(grantedAuthority))
@@ -58,7 +57,7 @@ class JwtTokenProvider {
 
     fun validateToken(token: String): Boolean {
         return try {
-            val claims: Jws<Claims> = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token)
+            val claims: Jws<Claims> = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token)
 
             !claims.body.expiration.before(Date())
         } catch (e: Exception) {
