@@ -34,4 +34,6 @@ INSERT INTO product(title, total_investing_amount, started_at, finished_at)
     to_date('202103101200' || level + 20, 'YYYYMMDDHH24MISS'), 
     to_date('202204151200' || level + 10, 'YYYYMMDDHH24MISS') FROM dual CONNECT BY LEVEL <= 20;
 
+INSERT INTO investor(name, password) VALUES ('hey', 'jusang');
+
 COMMIT;
