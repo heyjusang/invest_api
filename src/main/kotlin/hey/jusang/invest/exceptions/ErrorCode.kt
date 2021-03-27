@@ -9,4 +9,5 @@ object ErrorCode {
     const val USER_ALREADY_EXISTED = 90006
     const val USER_NOT_FOUND = 90007
     const val WRONG_PASSWORD = 90008
+    const val FORBIDDEN_REQUEST = 90009
 }

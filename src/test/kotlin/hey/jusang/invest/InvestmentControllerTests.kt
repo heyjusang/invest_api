@@ -10,10 +10,13 @@ import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.models.Investment
 import hey.jusang.invest.models.Product
 import hey.jusang.invest.services.InvestmentService
+import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.security.test.context.support.WithAnonymousUser
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -31,6 +34,9 @@ class InvestmentControllerTests {
 
     @MockBean
     lateinit var investmentService: InvestmentService
+
+    @MockBean
+    lateinit var jwtTokenProvider: JwtTokenProvider
 
     var objectMapper: ObjectMapper = ObjectMapper().registerModules(KotlinModule(), JavaTimeModule())
 
@@ -65,6 +71,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should get investments of user by user id`() {
         val data: List<Investment> = listOf(
             Investment(
@@ -89,6 +96,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should create investment`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
             .thenReturn(true)
@@ -111,6 +119,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle SQLException while getting investments with database problem`() {
         whenever(investmentService.getInvestments(1))
             .thenAnswer { throw SQLException("error message") }
@@ -122,6 +131,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle SQLException while creating investment with database problem`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
             .thenAnswer { throw SQLException("error message") }
@@ -133,6 +143,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle InvalidAmountException while creating investment with invalid amount`() {
         whenever(investmentService.createInvestment(1, 1, -1))
             .thenAnswer { throw InvalidAmountException() }
@@ -144,6 +155,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle ProductNotFoundException while creating investment with invalid product id`() {
         whenever(investmentService.createInvestment(1, 1, 100))
             .thenAnswer { throw ProductNotFoundException() }
@@ -155,6 +167,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle ProductNotOpenedException while creating investment with not opened product`() {
         whenever(investmentService.createInvestment(1, 1, 100))
             .thenAnswer { throw ProductNotOpenedException() }
@@ -166,6 +179,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle ProductClosedException while creating investment with closed product`() {
         whenever(investmentService.createInvestment(1, 1, 100))
             .thenAnswer { throw ProductClosedException() }
@@ -177,6 +191,7 @@ class InvestmentControllerTests {
     }
 
     @Test
+    @WithMockUser(username = "1")
     fun `we should handle TotalInvestingAmountExceededException while creating investment with exceeded amount`() {
         whenever(investmentService.createInvestment(1, 1, 100))
             .thenAnswer { throw TotalInvestingAmountExceededException() }
@@ -185,6 +200,62 @@ class InvestmentControllerTests {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.TOTAL_INVESTING_AMOUNT_EXCEEDED))
+    }
+
+    @Test
+    @WithAnonymousUser
+    fun `we cannot create investment without authentication`() {
+        whenever(investmentService.createInvestment(1, 1, 10000))
+            .thenReturn(true)
+
+        createInvestment(1, 1, 10000)
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(username = "2")
+    fun `we cannot create investment of others`() {
+        whenever(investmentService.createInvestment(1, 1, 10000))
+            .thenReturn(true)
+
+        createInvestment(1, 1, 10000)
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.FORBIDDEN_REQUEST))
+    }
+
+    @Test
+    @WithAnonymousUser
+    fun `we cannot get investments without authentication`() {
+        val data: List<Investment> = listOf(
+            Investment(
+                4, 1, 1, "product 1", 2000000, 10000,
+                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+            )
+        )
+
+        whenever(investmentService.getInvestments(1)).thenReturn(data)
+
+        getInvestments(1)
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(username = "2")
+    fun `we cannot get investments of others`() {
+        val data: List<Investment> = listOf(
+            Investment(
+                4, 1, 1, "product 1", 2000000, 10000,
+                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+            )
+        )
+
+        whenever(investmentService.getInvestments(1)).thenReturn(data)
+
+        getInvestments(1)
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.FORBIDDEN_REQUEST))
     }
 
     private fun createInvestment(userId: Int, productId: Int, amount: Int): ResultActions {

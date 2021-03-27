@@ -32,7 +32,7 @@ class JwtTokenProvider {
     fun createToken(user: User): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(user.id.toString())
-        claims["name"] = user.name
+        claims["name"] = user.id
         claims["password"] = user.password
         claims["role"] = user.role
 

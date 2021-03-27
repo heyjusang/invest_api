@@ -25,3 +25,6 @@ class UserNotFoundException :
 
 class WrongPasswordException :
     BaseException(ErrorCode.WRONG_PASSWORD, HttpStatus.UNAUTHORIZED, "Wrong password is given")
+
+class ForbiddenRequestException :
+    BaseException(ErrorCode.FORBIDDEN_REQUEST, HttpStatus.FORBIDDEN, "Forbidden request")
