@@ -7,6 +7,8 @@
     * mybatis-spring-boot-starter (Mybatis)
     * odjbc8 (Oracle JDBC)
     * mockito-kotlin (Mockito for Kotlin)
+    * spring-boot-starter-security (Spring Authentication)
+    * jjwt-api, jjwt-impl, jjwt-jackson (JWT)
 * Java 11
 * Kotlin 1.4.30
 * Oracle 12.2.0.1.0 (12c)
@@ -24,10 +26,10 @@
   * 세팅 후, src/main/resources/data/에 있는 create_db.sql, insert_test_data.sql 수행
 * 단위테스트, 통합테스트 실행
   * mvn test
-  * 실제 DB와 통신이 필요한 test가 있음 (InvestmentRepositoryTests, InvestApplicationTests)
+  * 실제 DB와 통신이 필요한 test가 있음 (InvestmentRepositoryTests, SignRepositoryTests, InvestApplicationTests)
     * 만약 Oracle 세팅이 된 상태면 테스트 시 데이터 생성하고/삭제하는 과정 있으니 그냥 돌릴 수 있음
     * 만약 Oracle이 없으면 두 테스트 제외하고 나머지 테스트만 수행
-      * mvn -Dtest=InvestmentControllerTests,InvestmentServiceTests test
+      * mvn -Dtest=InvestmentControllerTests,InvestmentServiceTests,SignControllerTests,SignServiceTests test
 
 ## API 목록
 * 모집 기간 내 투자 상품 조회
@@ -37,13 +39,13 @@
   [{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":"N"}, ...]
   ```
 * 유저의 투자 내역 조회
-  * [GET] /investments (Header: {X-USER-ID: Int})
+  * [GET] /investments (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String})
   * 리턴
   ``` json
   [{"id":1,"userId":10,"productId":3,"productTitle":"Sold out product","totalInvestingAmount":2000000,"amount":1000000,"createdAt":"2021-03-13T22:01:01"}, ...]
   ```
 * 투자 하기
-  * [POST] /investment (Header: {X-USER-ID: Int}, Param: {product_id: Int, amount: Int})
+  * [POST] /investment (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {product_id: Int, amount: Int})
   * 리턴
   ``` json
   {"success":true}
@@ -79,6 +81,16 @@
 |AMOUNT    | NOT NULL| NUMBER| 
 |CREATED_AT |        | DATE  | 
 
+* Investor (유저정보)
+
+|Name|         Null |      Type  |   
+|----------| --------| ------ |
+|ID        | NOT NULL| NUMBER| 
+|NAME    |NOT NULL| VARCHAR2(20)| 
+|PASSWORD |NOT NULL| VARCHAR2(200)| 
+|ROLE    | NOT NULL| VARCHAR2(10)| 
+|CREATED_AT |        | DATE  | 
+
 ### Index
 
 |Table Name| Index Name| Column Name|
@@ -90,6 +102,8 @@
 |INVESTMENT	|SYS_C0020497	|ID
 |INVESTMENT	|UQ_USER_ID_PRODUCT_ID	|USER_ID
 |INVESTMENT	|UQ_USER_ID_PRODUCT_ID	|PRODUCT_ID
+|INVESTOR| SYS_C0024762| ID
+|INVESTOR| SYS_C0024763| NAME
 
 ### Constraint
 
@@ -105,6 +119,9 @@
 |INVESTMENT	|"USER_ID" IS NOT NULL|
 |INVESTMENT	|"PRODUCT_ID" IS NOT NULL|
 |INVESTMENT	|"AMOUNT" IS NOT NULL|
+|INVESTOR   |"ID" IS NOT NULL|
+|INVESTOR|"NAME IS NOT NULL|
+|INVESTOR|"PASSWORD IS NOT NULL|
 
 ## 프로젝트 구성
 ### models/
@@ -112,6 +129,8 @@
   * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, soldOut
 * Investment (투자 정보)
   * id, userId, productId, productTitle, totalInvestingAmount, amount, createdAt
+* User (유저 정보)
+  * id, name, password, role, createdAt
   
 ### controllers/
 * InvestmentController
@@ -122,10 +141,12 @@
   * getInvestments()
     * [GET] /investments (Header: {X-USER-ID: Int})
     * X-USER-ID에 해당하는 유저가 투자한 모든 투자 내역 반환
+    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
     * Investment 리스트 리턴
   * createInvestment()
     * [POST] /investment (Header: {X-USER-ID: Int}, Param: {product_id: Int, amount: Int})
     * X-USER-ID에 해당하는 유저가 product_id에 해당하는 상품에 amount만큼의 금액을 투자
+    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
     * 성공 시, {success: true} 형태로 리턴
     * 실패 시, 실패 원인에 따라 {erroCode: Int, message: String} 형태로 리턴
   * sqlException() (ExceptionHandler)
@@ -134,6 +155,17 @@
   * baseException() (ExceptionHandler)
     * service layer 로직상에서 발생한 에러 핸들링
     * 에러 발생 시 {errorCode: Int, message: String) 형태로 리턴 (Http Status Code: 400 or 404)
+* SignController
+  * signIn()
+    * [POST] /signin (Param: {name: String, password: String})
+    * 로그인
+    * User Token 리턴
+  * signUp()
+    * [POST] /signup (Param: {name: String, password: String})
+    * 회원가입
+    * 성공 시, {success: true} 형태로 리턴
+  * sqlException() (ExceptionHandler)
+  * baseException() (ExceptionHandler)
     
 ### services/
 * InvestmentService
@@ -149,6 +181,15 @@
     * 아직 열리지 않은 상품에 투자 시도 -> ProductNotOpenedException
     * 닫힌 상품에 투자 시도 -> ProductClosedException
     * 매진된 상품에 투자하거나, 투자 금액이 남은 투자 가능 금액을 넘어설 때 -> TotalInvestingAmountExceedException
+* SignService
+* SignServiceImpl
+  * signIn()
+    * 로그인
+    * 없는 유저 -> UserNotFoundException
+    * 비밀번호 오류 -> UserAlreadyExistedException
+  * signUp()
+    * 회원가입
+    * 있는 유저 -> UserAlreadyExistedException
     
 ### repositories/
 * InvestmentRepository
@@ -185,7 +226,22 @@
     ``` sql
     INSERT INTO investment(user_id, amount, product_id) VALUES (#{userId}, #{amount}, #{productId})
     ```
-
+* SignRepository
+  * selectUserByName()
+    * 유저정보 가져오는 쿼리
+    ``` sql
+    SELECT * FROM investor WHERE name = #{name}
+    ```
+  * selectUserCountByName()
+    * 유저 이름에 해당하는 유저가 있나 확인하는 쿼리
+    ``` sql
+    SELECT COUNT(*) FROM investor WHERE name = #{name}
+    ```
+  * insertUser()
+    * 새로운 유저 생성하는 쿼리
+    ``` sql
+    INSERT INTO investor(name, password) VALUES (#{name}, #{password})
+    ```
 ### exceptions/
 * 내부 로직에서 발생할 때 throw할 에러를 정의
 * ErrorCode
@@ -195,6 +251,18 @@
   * BaseException을 정의하고, 실제 exception들은 BaseException을 상속해서 정의
 * ErrorMessage
   * 에러 발생 시 리턴해줄 메시지 정의
+
+### utils/
+* JwtTokenProvider
+  * JWT의 생성, 추출, 검증 및 User Authentication 생성을 담당
+
+### filters/
+* JwtAuthenticationFilter
+  * JwtTokenProvider를 이용하여 Http request로부터 토큰 추출, 검증 후 Authentication 설정
+
+### configs/
+* SecurityConfiguration
+  * UsernamePasswordAutenticationFilter 수행 전 JwtAutenticationFilter 사용
 
 ## 동시성 문제
 ### 동시에 여러 유저가 동일한 상품에 투자하고자 할 때, 어떻게 처리할 것인가?
@@ -236,7 +304,7 @@
 * 에러 발생 시 BaseException 리턴
 
 ## Test
-* 총 47개 테스트
+* 총 72개 테스트
 * 테스트에 필요한 sql script는 src/main/resources/data/에 있음
   * create_db.sql - 테스트에 필요한 스키마 생성
   * insert_test_data.sql - 테스트에 필요한 데이터 생성
@@ -263,6 +331,19 @@
 |we cannot create investment having negative amount| createInvestment() 실패 테스트 - 음수의 금액 투자|
 |we cannot create investment having zero amount| createInvestment() 실패 테스트 - 0원 투자|
 
+### SignRepositoryTests
+* 5개 테스트
+* 실제 DB와 커넥션 필요
+* 테스트 데이터 필요
+
+| 테스트 이름 | 테스트 내용 |
+|---|---|
+|testRepository should be configured() | 환경 테스트 |
+|we should get 1 investor when requesting investor whose name is hey| selectUserByName() 테스트|
+|we cannot get investor without proper name| selectUserByName() 없는 이름 테스트|
+|we should get 1 when requesting count of investor whose name is hey| selectUserCountByName() 테스트|
+|we should create investor| insertUser() 테스트|
+
 ### InvestmentServiceTests
 * 9개 테스트
 * Service Layer 기능 검사를 위한 단위 테스트
@@ -279,8 +360,20 @@
 |we should get ProductClosedException while creating investment with closed product| createInvestment() 실패 처리 테스트 - 닫힌 상품|
 |we should get TotalInvestingAmountExceededException while creating investment with exceed amount| createInvestment() 실패 처리 테스트 - 금액 초과|
 
+### SignServiceTests
+* 6개 테스트
+
+| 테스트 이름| 테스트 내용|
+|---|---|
+|mock should be configured| 환경 테스트|
+|we should get token when signing in| signIn() 테스트|
+|we should sign up| signUp() 테스트|
+|we should get UserNotFoundException when signing in with wrong name| signIn() 실패 테스트 - 없는 유저|
+|we should get WrongPasswordException when signing in with wrong password signIn() 실패 테스트 - 비밀번호 오류|
+|we should get UserAlreadyExistedException when sign up with existed name| signUp() 실패 테스트 - 이미 있는 유저 이름|
+
 ### InvestmentControllerTests
-* 12개 테스트
+* 16개 테스트
 * Controller Layer 기능 검사를 위한 단위 테스트
 
 | 테스트 이름| 테스트 내용|
@@ -297,9 +390,25 @@
 |we should handle ProductNotOpenedException while creating investment with not opened product| [POST] /investment 중 ProductNotOpenedException 에러 리턴 테스트 |
 |we should handle ProductClosedException while creating investment with closed product| [POST] /investment 중 ProductClosedException 에러 리턴 테스트 |
 |we should handle TotalInvestingAmountExceededException while creating investment with exceeded amount| [POST] /investment 중 TotalInvestingAmountExceededException 에러 리턴 테스트 |
+|we cannot create investment without authentication| 인증 없이 [POST] /investment 수행 불가|
+|we cannot create investment of others| 인증된 유저와 다른 id로 [POST] /investment 수행 불가|
+|we cannot get investments without authentication| 인증 없이 [GET] /investments 수행 불가|
+|we cannot get investments of others| 인증된 유저와 다른 id로 [GET] /investments 수행 불가|
+
+### SignControllerTests
+* 6개 테스트
+
+| 테스트 이름| 테스트 내용|
+|---|---|
+|mock mvc should be configured|환경 테스트|
+|we should sign in| [POST] /signin 테스트|
+|we should sign up| [POST] /signup 테스트|
+|we should handle UserNotFoundException while signing in with wrong name| [POST] /signin 중 UserNotFoundException 에러 리턴 테스트|
+|we should handle WrongPasswordException while signing in with wrong password| [POST] /signin 중 WrongPasswordException 에러 리턴 테스트|
+|we should handle UserAlreadyExistedException while signing up with existed name| [POST] /signup 중 UserAlreadyExistedException 에러 리턴 테스트|
 
 ### InvestApplicationTests
-* 15개 테스트
+* 19개 테스트
 * 실제 Application 단위의 통합 테스트
 
 | 테스트 이름| 테스트 내용|
@@ -319,6 +428,10 @@
 |we should handle multiple request for getting investments| 여러 사람이 동시에 투자 내역 조회하는 테스트|
 |we should handle multiple request for creating investments| 여러 사람이 동시에 투자하는 테스트|
 |we should handle multiple request for creating investments of same product| 1원 남은 투자 상품에 여러 사람이 동시에 투자하는 테스트|
+|we should sign up and cannot sign up with same user name| 회원가입 테스트|
+|we should sign in| 로그인 테스트|
+|we cannot sign in with wrong user name| 없는 아이디로 로그인 테스트|
+|we cannot sign in with wrong password| 잘못된 비밀번호로 로그인 테스트|
 
 
 

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import hey.jusang.invest.exceptions.ErrorCode
 import hey.jusang.invest.models.Investment
 import hey.jusang.invest.models.Product
+import hey.jusang.invest.models.User
+import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -66,6 +68,9 @@ class InvestApplicationTests {
 
     @Autowired
     lateinit var mvc: MockMvc
+
+    @Autowired
+    lateinit var jwtTokenProvider: JwtTokenProvider
 
     var objectMapper: ObjectMapper = ObjectMapper().registerModules(KotlinModule(), JavaTimeModule())
 
@@ -372,9 +377,75 @@ class InvestApplicationTests {
         assert(updatedProducts[0].soldOut == 'Y')
     }
 
+    @Test
+    fun `we should sign up and cannot sign up with same user name`() {
+        signUp("newname", "password")
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.success").value(true))
+
+        signUp("newname", "password")
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.USER_ALREADY_EXISTED))
+    }
+
+    @Test
+    fun `we should sign in`() {
+        signUp("newname", "password")
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.success").value(true))
+
+        signIn("newname", "password")
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.token").isNotEmpty)
+    }
+
+    @Test
+    fun `we cannot sign in with wrong user name`() {
+        signIn("wrongname", "password")
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.USER_NOT_FOUND))
+    }
+
+    @Test
+    fun `we cannot sign in with wrong password`() {
+        signUp("newname", "password")
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.success").value(true))
+
+        signIn("newname", "wrongPassword")
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
+    }
+
+    private fun signUp(name: String, password: String): ResultActions {
+        return mvc.perform(
+            post("/signup")
+                .param("name", name)
+                .param("password", password)
+        )
+    }
+
+    private fun signIn(name: String, password: String): ResultActions {
+        return mvc.perform(
+            post("/signin")
+                .param("name", name)
+                .param("password", password)
+        )
+    }
+
     private fun createInvestment(userId: Int, productId: Int, amount: Int): ResultActions {
+        val user = User(userId, "test", "password", "USER", LocalDateTime.now())
+
         return mvc.perform(
             post("/investment")
+                .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
                 .header("X-USER-ID", userId)
                 .param("product_id", productId.toString())
                 .param("amount", amount.toString())
@@ -382,7 +453,11 @@ class InvestApplicationTests {
     }
 
     private fun getInvestments(userId: Int): ResultActions {
-        return mvc.perform(get("/investments").header("X-USER-ID", userId))
+        val user = User(userId, "test", "password", "USER", LocalDateTime.now())
+
+        return mvc.perform(
+            get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)
+        )
     }
 
     private fun getProducts(): ResultActions {
