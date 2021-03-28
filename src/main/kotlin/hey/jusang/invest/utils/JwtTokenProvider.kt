@@ -8,10 +8,8 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
-import java.lang.Exception
 import java.security.Key
 import java.util.*
 import javax.annotation.PostConstruct
@@ -32,7 +30,7 @@ class JwtTokenProvider {
     fun createToken(user: User): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(user.id.toString())
-        claims["name"] = user.id
+        claims["name"] = user.id.toString()
         claims["password"] = user.password
         claims["role"] = user.role
 
@@ -46,9 +44,15 @@ class JwtTokenProvider {
 
     fun getAuthentication(token: String): Authentication {
         val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
-        val grantedAuthority: GrantedAuthority = SimpleGrantedAuthority(claims["role"] as String?)
 
-        return UsernamePasswordAuthenticationToken(claims["name"], claims["password"], listOf(grantedAuthority))
+        // TODO: UserDetailsService
+        val builder: org.springframework.security.core.userdetails.User.UserBuilder =
+            org.springframework.security.core.userdetails.User.withUsername(claims["name"] as String)
+                .password(claims["password"] as String)
+                .roles(claims["role"] as String)
+        val userDetails: UserDetails = builder.build()
+
+        return UsernamePasswordAuthenticationToken(userDetails, userDetails.password, userDetails.authorities)
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
