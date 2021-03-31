@@ -5,31 +5,18 @@
   * Dependency
     * spring-boot-starter-web (Spring MVC)
     * mybatis-spring-boot-starter (Mybatis)
-    * odjbc8 (Oracle JDBC)
+    * h2 (H2 in-memory database (mode: oracle))
     * mockito-kotlin (Mockito for Kotlin)
     * spring-boot-starter-security (Spring Authentication)
     * jjwt-api, jjwt-impl, jjwt-jackson (JWT)
 * Java 11
 * Kotlin 1.4.30
-* Oracle 12.2.0.1.0 (12c)
-
-## 사전작업
-* Oracle 계정 생성
-* application.properties에 접속정보 설정
-  * spring.datasource.url={url}
-  * spring.datasource.username={username}
-  * spring.datasource.password={password}
-  
+ 
 ## 실행
 * mvn spring-boot:run
-  * 서버 실행 후, 실제 리퀘스트를 날리기 위해서는 Oracle이 세팅되어야함
-  * 세팅 후, src/main/resources/data/에 있는 create_db.sql, insert_test_data.sql 수행
+  * 세팅 후, src/main/resources/data/에 있는 schema.sql, data.sql 수행
 * 단위테스트, 통합테스트 실행
   * mvn test
-  * 실제 DB와 통신이 필요한 test가 있음 (InvestmentRepositoryTests, SignRepositoryTests, InvestApplicationTests)
-    * 만약 Oracle 세팅이 된 상태면 테스트 시 데이터 생성하고/삭제하는 과정 있으니 그냥 돌릴 수 있음
-    * 만약 Oracle이 없으면 두 테스트 제외하고 나머지 테스트만 수행
-      * mvn -Dtest=InvestmentControllerTests,InvestmentServiceTests,SignControllerTests,SignServiceTests test
 
 ## API 목록
 * 모집 기간 내 투자 상품 조회
@@ -306,16 +293,14 @@
 ## Test
 * 총 72개 테스트
 * 테스트에 필요한 sql script는 src/main/resources/data/에 있음
-  * create_db.sql - 테스트에 필요한 스키마 생성
-  * insert_test_data.sql - 테스트에 필요한 데이터 생성
+  * schema.sql - 테스트에 필요한 스키마 생성
+  * data.sql - 테스트에 필요한 데이터 생성
   * drop_db.sql - 테스트 완료 후 스키마 삭제
 * 위 sql script는 항상 수행하는 것은 아니고, 실제 DB와 통신이 필요한 Repository Layer 단위테스트와 Application 통합테스트에서만 사용
 
 ### InvestmentRepositoryTests
 * 11개 테스트
 * Repository Layer 기능 검사를 위한 단위 테스트
-* 실제 DB와 커넥션 필요
-* 테스트 데이터 필요
 
 | 테스트 이름 | 테스트 내용 |
 |---|---|
@@ -333,8 +318,6 @@
 
 ### SignRepositoryTests
 * 5개 테스트
-* 실제 DB와 커넥션 필요
-* 테스트 데이터 필요
 
 | 테스트 이름 | 테스트 내용 |
 |---|---|
