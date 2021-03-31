@@ -14,7 +14,7 @@ import org.springframework.test.context.jdbc.SqlGroup
 @SqlGroup(
     value = [
         Sql(
-            scripts = ["/data/create_db.sql", "/data/insert_test_data.sql"],
+            scripts = ["/data/schema.sql", "/data/data.sql"],
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
         ),
         Sql(
