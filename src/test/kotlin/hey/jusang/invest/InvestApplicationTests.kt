@@ -5,9 +5,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import hey.jusang.invest.exceptions.ErrorCode
-import hey.jusang.invest.models.Investment
-import hey.jusang.invest.models.Product
-import hey.jusang.invest.models.User
+import hey.jusang.invest.entities.Investment
+import hey.jusang.invest.entities.Product
+import hey.jusang.invest.entities.Investor
+import hey.jusang.invest.models.InvestmentDTO
+import hey.jusang.invest.models.InvestorDTO
+import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,21 +34,12 @@ import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.streams.toList
 
+
+// TODO: check all tests
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@SqlGroup(
-    value = [
-        Sql(
-            scripts = ["/data/schema.sql", "/data/data.sql"],
-            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
-        ),
-        Sql(
-            scripts = ["/data/drop_db.sql"],
-            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
-        )
-    ]
-)
 class InvestApplicationTests {
     /*
      * product 1: Normal Product
@@ -56,15 +50,15 @@ class InvestApplicationTests {
      * product 6~25: Dummy Normal Product
      */
 
-    val normalProductId = 1
-    val closedProductId = 2
-    val soldOutProductId = 3
-    val lastChanceProductId = 4
-    val notOpenedProductId = 5
-    val invalidProductId = 9999
+    val normalProductId = 1L
+    val closedProductId = 2L
+    val soldOutProductId = 3L
+    val lastChanceProductId = 4L
+    val notOpenedProductId = 5L
+    val invalidProductId = 9999L
 
-    val investorId = 10
-    val newInvestorId = 99
+    val investorId = 10L
+    val newInvestorId = 99L
 
     @Autowired
     lateinit var mvc: MockMvc
@@ -86,14 +80,14 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
         assert(products.size == 23)
 
         for (product in products) {
             assert(current >= product.startedAt && current < product.finishedAt)
 
-            if (product.soldOut == 'Y') {
+            if (product.soldOut!!) {
                 soldOut++
                 assert(product.totalInvestingAmount == product.currentInvestingAmount)
             } else {
@@ -110,7 +104,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<Investment> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
 
         assert(investments.size == 2)
 
@@ -150,13 +144,13 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
-        val updatedProducts: List<Product> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
-        assert(updatedProducts[0].soldOut == 'Y')
+        assert(updatedProducts[0].soldOut!!)
     }
 
     @Test
@@ -259,7 +253,7 @@ class InvestApplicationTests {
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
 
-        for (i in 10..19) {
+        for (i in 10L..19L) {
             futures.add(executorService.submit<Boolean> {
                 var result = true
                 val resultActions = getInvestments(i)
@@ -298,10 +292,10 @@ class InvestApplicationTests {
         val executorService: ExecutorService = Executors.newFixedThreadPool(10)
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
-        for (i in 20..29) {
+        for (i in 20L..29L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
-                val resultActions = createInvestment(i, i - 10, 100 + i)
+                val resultActions = createInvestment(i, i - 10, 100 + i.toInt())
 
                 result = resultActions.andReturn().response.status == HttpStatus.CREATED.value()
 
@@ -323,15 +317,15 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
-        val updatedProducts: List<Product> = products.stream().filter { it.id in 10..19 }.toList()
+        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id in 10L..19L }.toList()
         assert(updatedProducts.size == 10)
         for (i in 0..9) {
-            val id = updatedProducts[i].id
-            assert(updatedProducts[i].currentInvestingAmount == 110 + id)
+            val id :Long = updatedProducts[i].id!!
+            assert(updatedProducts[i].currentInvestingAmount == 110 + id.toInt())
             assert(updatedProducts[i].investorCount == 1)
-            assert(updatedProducts[i].soldOut == 'N')
+            assert(!updatedProducts[i].soldOut!!)
         }
     }
 
@@ -342,7 +336,7 @@ class InvestApplicationTests {
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
 
-        for (i in 20..29) {
+        for (i in 20L..29L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
                 val resultActions: ResultActions = createInvestment(i, lastChanceProductId, 1)
@@ -367,14 +361,14 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
-        val updatedProducts: List<Product> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
 
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
-        assert(updatedProducts[0].soldOut == 'Y')
+        assert(updatedProducts[0].soldOut!!)
     }
 
     @Test
@@ -440,8 +434,8 @@ class InvestApplicationTests {
         )
     }
 
-    private fun createInvestment(userId: Int, productId: Int, amount: Int): ResultActions {
-        val user = User(userId, "test", "password", "USER", LocalDateTime.now())
+    private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
+        val user = InvestorDTO(userId, "test", "password", "USER", LocalDateTime.now())
 
         return mvc.perform(
             post("/investment")
@@ -452,8 +446,8 @@ class InvestApplicationTests {
         )
     }
 
-    private fun getInvestments(userId: Int): ResultActions {
-        val user = User(userId, "test", "password", "USER", LocalDateTime.now())
+    private fun getInvestments(userId: Long): ResultActions {
+        val user = InvestorDTO(userId, "test", "password", "USER", LocalDateTime.now())
 
         return mvc.perform(
             get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)
@@ -464,7 +458,7 @@ class InvestApplicationTests {
         return mvc.perform(get("/products"))
     }
 
-    private fun checkInvestmentNotCreated(userId: Int) {
+    private fun checkInvestmentNotCreated(userId: Long) {
         val resultActions: ResultActions = getInvestments(userId)
         resultActions.andExpect(status().isOk)
 
@@ -473,7 +467,7 @@ class InvestApplicationTests {
         assert(investments.isEmpty())
     }
 
-    private fun checkProductNotUpdated(productId: Int) {
+    private fun checkProductNotUpdated(productId: Long) {
         val resultActions: ResultActions = getProducts()
         resultActions.andExpect(status().isOk)
 

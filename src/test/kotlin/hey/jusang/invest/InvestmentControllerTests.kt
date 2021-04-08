@@ -7,8 +7,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockitokotlin2.whenever
 import hey.jusang.invest.controllers.InvestmentController
 import hey.jusang.invest.exceptions.*
-import hey.jusang.invest.models.Investment
-import hey.jusang.invest.models.Product
+import hey.jusang.invest.entities.Investment
+import hey.jusang.invest.entities.Product
+import hey.jusang.invest.models.InvestmentDTO
+import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.InvestmentService
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
@@ -46,26 +48,26 @@ class InvestmentControllerTests {
 
     @Test
     fun `we should get products`() {
-        val data: List<Product> = listOf(
-            Product(
+        val data: List<ProductDTO> = listOf(
+            ProductDTO(
                 1, "product 1", 400000, 10000, 1,
                 LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), 'N'
+                LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
             ),
-            Product(
+            ProductDTO(
                 5, "product 5", 500000, 20000, 1,
                 LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11), 'N'
+                LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11), false
             )
         )
 
-        whenever(investmentService.getProducts()).thenReturn(data)
+        whenever(investmentService.getProducts(LocalDateTime.now())).thenReturn(data)
 
         val resultActions: ResultActions = getProducts()
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
         assert(products == data)
     }
@@ -73,14 +75,23 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should get investments of user by user id`() {
-        val data: List<Investment> = listOf(
-            Investment(
-                4, 1, 1, "product 1", 2000000, 10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+        val data: List<InvestmentDTO> = listOf(
+            InvestmentDTO(
+                4, 1, 1, 10000, LocalDateTime.of(2022, Month.MARCH, 12, 11, 11, 11),
+                ProductDTO(
+                    1, "product 1", 2000000, 10000, 1,
+                    LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
+                    LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
+                )
             ),
-            Investment(
-                15, 1, 33, "product 33", 3000000, 45000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 12, 11)
+            InvestmentDTO(
+                15, 1, 33, 45000,
+                LocalDateTime.of(2021, Month.MARCH, 13, 11, 12, 11),
+                ProductDTO(
+                    33, "product 33", 3000000, 45000, 1,
+                    LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
+                    LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
+                )
             )
         )
 
@@ -90,7 +101,7 @@ class InvestmentControllerTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<Investment> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
 
         assert(investments == data)
     }
@@ -99,17 +110,18 @@ class InvestmentControllerTests {
     @WithMockUser(username = "1")
     fun `we should create investment`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(true)
+            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
+                // TODO: objectMapper
+            //.andExpect(jsonPath("$.success").value(true))
     }
 
     @Test
     fun `we should handle SQLException while getting products with database problem`() {
-        whenever(investmentService.getProducts())
+        whenever(investmentService.getProducts(LocalDateTime.now()))
             .thenAnswer { throw SQLException("error message") }
 
         getProducts()
@@ -206,7 +218,7 @@ class InvestmentControllerTests {
     @WithAnonymousUser
     fun `we cannot create investment without authentication`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(true)
+            .thenReturn(InvestmentDTO(1, 1, 1,10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isForbidden)
@@ -216,7 +228,7 @@ class InvestmentControllerTests {
     @WithMockUser(username = "2")
     fun `we cannot create investment of others`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(true)
+            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isForbidden)
@@ -227,10 +239,11 @@ class InvestmentControllerTests {
     @Test
     @WithAnonymousUser
     fun `we cannot get investments without authentication`() {
-        val data: List<Investment> = listOf(
-            Investment(
-                4, 1, 1, "product 1", 2000000, 10000,
+        val data: List<InvestmentDTO> = listOf(
+            InvestmentDTO(
+                4, 1, 1, 10000,
                 LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+            // TODO : ProductDTO
             )
         )
 
@@ -243,10 +256,11 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "2")
     fun `we cannot get investments of others`() {
-        val data: List<Investment> = listOf(
-            Investment(
-                4, 1, 1, "product 1", 2000000, 10000,
+        val data: List<InvestmentDTO> = listOf(
+            InvestmentDTO(
+                4, 1, 1,  10000,
                 LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+            // TODO: ProductDTO
             )
         )
 
@@ -272,6 +286,7 @@ class InvestmentControllerTests {
     }
 
     private fun getProducts(): ResultActions {
+        // TODO: LocalDateTime.now()
         return mvc.perform(get("/products"))
     }
 }

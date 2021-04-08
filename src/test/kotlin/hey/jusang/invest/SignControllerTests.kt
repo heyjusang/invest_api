@@ -6,6 +6,7 @@ import hey.jusang.invest.exceptions.ErrorCode
 import hey.jusang.invest.exceptions.UserAlreadyExistedException
 import hey.jusang.invest.exceptions.UserNotFoundException
 import hey.jusang.invest.exceptions.WrongPasswordException
+import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.services.SignService
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
@@ -48,12 +49,13 @@ class SignControllerTests {
     @Test
     fun `we should sign up`() {
         whenever(signService.signUp("username", "password"))
-            .thenReturn(true)
+            .thenReturn(InvestorDTO(1, "username", "password"))
 
         signUp("username", "password")
             .andExpect(status().isCreated)
             .andExpect(MockMvcResultMatchers.jsonPath("$").isNotEmpty)
-            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(true))
+            // TODO: objectMapper readValue
+            //.andExpect(MockMvcResultMatchers.jsonPath("$.success").value(true))
     }
 
     @Test
