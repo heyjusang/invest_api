@@ -3,8 +3,6 @@ package hey.jusang.invest.controllers
 import hey.jusang.invest.exceptions.BaseException
 import hey.jusang.invest.exceptions.ErrorMessage
 import hey.jusang.invest.exceptions.ForbiddenRequestException
-import hey.jusang.invest.entities.Investment
-import hey.jusang.invest.entities.Product
 import hey.jusang.invest.models.InvestmentDTO
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.InvestmentService
@@ -14,13 +12,12 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import java.sql.SQLException
-import java.time.LocalDateTime
 
 @RestController
 class InvestmentController(val investmentService: InvestmentService) {
     @GetMapping("/products")
     fun getProducts(): ResponseEntity<List<ProductDTO>> {
-        return ResponseEntity(investmentService.getProducts(LocalDateTime.now()), HttpStatus.OK)
+        return ResponseEntity(investmentService.getProducts(), HttpStatus.OK)
     }
 
     @GetMapping("/investments")

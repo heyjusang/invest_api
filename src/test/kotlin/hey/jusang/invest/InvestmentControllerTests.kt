@@ -61,7 +61,7 @@ class InvestmentControllerTests {
             )
         )
 
-        whenever(investmentService.getProducts(LocalDateTime.now())).thenReturn(data)
+        whenever(investmentService.getProducts()).thenReturn(data)
 
         val resultActions: ResultActions = getProducts()
         resultActions.andExpect(status().isOk)
@@ -77,7 +77,7 @@ class InvestmentControllerTests {
     fun `we should get investments of user by user id`() {
         val data: List<InvestmentDTO> = listOf(
             InvestmentDTO(
-                4, 1, 1, 10000, LocalDateTime.of(2022, Month.MARCH, 12, 11, 11, 11),
+                4, 1, 1, 10000,
                 ProductDTO(
                     1, "product 1", 2000000, 10000, 1,
                     LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
@@ -86,7 +86,6 @@ class InvestmentControllerTests {
             ),
             InvestmentDTO(
                 15, 1, 33, 45000,
-                LocalDateTime.of(2021, Month.MARCH, 13, 11, 12, 11),
                 ProductDTO(
                     33, "product 33", 3000000, 45000, 1,
                     LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
@@ -121,7 +120,7 @@ class InvestmentControllerTests {
 
     @Test
     fun `we should handle SQLException while getting products with database problem`() {
-        whenever(investmentService.getProducts(LocalDateTime.now()))
+        whenever(investmentService.getProducts())
             .thenAnswer { throw SQLException("error message") }
 
         getProducts()
@@ -241,8 +240,7 @@ class InvestmentControllerTests {
     fun `we cannot get investments without authentication`() {
         val data: List<InvestmentDTO> = listOf(
             InvestmentDTO(
-                4, 1, 1, 10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+                4, 1, 1, 10000
             // TODO : ProductDTO
             )
         )
@@ -258,8 +256,7 @@ class InvestmentControllerTests {
     fun `we cannot get investments of others`() {
         val data: List<InvestmentDTO> = listOf(
             InvestmentDTO(
-                4, 1, 1,  10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+                4, 1, 1,  10000
             // TODO: ProductDTO
             )
         )
@@ -286,7 +283,6 @@ class InvestmentControllerTests {
     }
 
     private fun getProducts(): ResultActions {
-        // TODO: LocalDateTime.now()
         return mvc.perform(get("/products"))
     }
 }

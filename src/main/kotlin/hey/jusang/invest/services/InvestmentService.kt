@@ -7,7 +7,7 @@ import hey.jusang.invest.models.ProductDTO
 import java.time.LocalDateTime
 
 interface InvestmentService {
-    fun getProducts(current: LocalDateTime): List<ProductDTO>
+    fun getProducts(): List<ProductDTO>
     fun getInvestments(userId: Long): List<InvestmentDTO>
     fun createInvestment(userId: Long, productId: Long, amount: Int): InvestmentDTO
 }

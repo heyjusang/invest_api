@@ -1,23 +1,32 @@
 package hey.jusang.invest.entities
 
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
-class Investor() {
-    // TODO : var -> setter ?
+@EntityListeners(AuditingEntityListener::class)
+class Investor(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
-    var name: String? = null
-    var password: String? = null
+    val id: Long? = null,
+    var name: String? = null,
+    var password: String? = null,
     var role: String? = null
+) {
+    @CreatedDate
     var createdAt: LocalDateTime? = null
 
-    constructor(id: Long?, name: String?, password: String?, role: String?): this() {
-        this.id = id
-        this.name = name
-        this.password = password
-        this.role = role
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (id != (other as Investor).id) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return id?.hashCode() ?: 0
     }
 }

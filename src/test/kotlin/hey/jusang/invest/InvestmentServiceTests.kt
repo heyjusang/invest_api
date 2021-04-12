@@ -1,6 +1,5 @@
 package hey.jusang.invest
 
-import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.whenever
 import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.entities.Investment
@@ -11,13 +10,14 @@ import hey.jusang.invest.repositories.InvestmentRepository
 import hey.jusang.invest.repositories.ProductRepository
 import hey.jusang.invest.services.InvestmentServiceImpl
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import java.time.LocalDateTime
-import java.time.Month
+import java.time.*
 import java.util.*
 
 @ExtendWith(SpringExtension::class)
@@ -32,13 +32,27 @@ class InvestmentServiceTests {
     @InjectMocks
     lateinit var investmentService: InvestmentServiceImpl
 
+    @Mock
+    lateinit var clock: Clock
+
+    @BeforeEach
+    fun setup() {
+        val fixedClock: Clock = Clock.fixed(
+            LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11).atZone(ZoneId.systemDefault()).toInstant(),
+            ZoneId.systemDefault()
+        )
+
+        whenever(clock.instant()).thenReturn(fixedClock.instant())
+        whenever(clock.zone).thenReturn(fixedClock.zone)
+    }
+
     @Test
     fun `mock should be configured`() {
     }
 
     @Test
     fun `we should get products`() {
-        val current = LocalDateTime.now()
+        val fixedNow = LocalDateTime.now(clock)
         val data: List<Product> = listOf(
             Product(
                 1, "product 1", 400000, 10000, 1,
@@ -52,22 +66,20 @@ class InvestmentServiceTests {
             )
         )
 
-        whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)).thenReturn(data)
+        whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(fixedNow, fixedNow)).thenReturn(data)
 
-        val products: List<ProductDTO> = investmentService.getProducts(current)
-        assert(products == data.map{ ProductDTO(it)})
+        val products: List<ProductDTO> = investmentService.getProducts()
+        assert(products == data.map { ProductDTO(it) })
     }
 
     @Test
     fun `we should get investments of user by user id`() {
         val data: List<Investment> = listOf(
             Investment(
-                4, 1, 1, 10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+                4, 1, 1, 10000
             ),
             Investment(
-                15, 1, 33, 45000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 12, 11)
+                15, 1, 33, 45000
             )
         )
 
@@ -126,11 +138,11 @@ class InvestmentServiceTests {
         whenever(productRepository.findById(5))
             .thenReturn(
                 Optional.of(
-                Product(
-                    5, "product 5", 500000, 20000, 1,
-                    LocalDateTime.of(2022, Month.MARCH, 20, 12, 11, 11),
-                    LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
-                )
+                    Product(
+                        5, "product 5", 500000, 20000, 1,
+                        LocalDateTime.of(2022, Month.MARCH, 20, 12, 11, 11),
+                        LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+                    )
                 )
             )
 
@@ -144,11 +156,11 @@ class InvestmentServiceTests {
         whenever(productRepository.findById(5))
             .thenReturn(
                 Optional.of(
-                Product(
-                    5, "product 5", 500000, 20000, 1,
-                    LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                    LocalDateTime.of(2020, Month.MARCH, 21, 5, 11, 11)
-                )
+                    Product(
+                        5, "product 5", 500000, 20000, 1,
+                        LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+                        LocalDateTime.of(2020, Month.MARCH, 21, 5, 11, 11)
+                    )
                 )
             )
 
@@ -162,11 +174,11 @@ class InvestmentServiceTests {
         whenever(productRepository.findById(5))
             .thenReturn(
                 Optional.of(
-                Product(
-                    5, "product 5", 500000, 20000, 1,
-                    LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                    LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
-                )
+                    Product(
+                        5, "product 5", 500000, 20000, 1,
+                        LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+                        LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+                    )
                 )
             )
 

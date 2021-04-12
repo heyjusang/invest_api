@@ -435,7 +435,7 @@ class InvestApplicationTests {
     }
 
     private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER", LocalDateTime.now())
+        val user = InvestorDTO(userId, "test", "password", "USER")
 
         return mvc.perform(
             post("/investment")
@@ -447,7 +447,7 @@ class InvestApplicationTests {
     }
 
     private fun getInvestments(userId: Long): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER", LocalDateTime.now())
+        val user = InvestorDTO(userId, "test", "password", "USER")
 
         return mvc.perform(
             get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)

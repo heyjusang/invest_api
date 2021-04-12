@@ -9,12 +9,18 @@ import hey.jusang.invest.repositories.InvestmentRepository
 import hey.jusang.invest.repositories.ProductRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Component
-class InvestmentServiceImpl(val investmentRepository: InvestmentRepository, val productRepository: ProductRepository) :
+class InvestmentServiceImpl(
+    val investmentRepository: InvestmentRepository,
+    val productRepository: ProductRepository,
+    val clock: Clock
+) :
     InvestmentService {
-    override fun getProducts(current: LocalDateTime): List<ProductDTO> {
+    override fun getProducts(): List<ProductDTO> {
+        val current = LocalDateTime.now(clock)
         return productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
             .map { ProductDTO(it) }
     }
@@ -28,7 +34,7 @@ class InvestmentServiceImpl(val investmentRepository: InvestmentRepository, val 
     override fun createInvestment(userId: Long, productId: Long, amount: Int): InvestmentDTO {
         if (amount <= 0) throw InvalidAmountException()
 
-        val current: LocalDateTime = LocalDateTime.now()
+        val current: LocalDateTime = LocalDateTime.now(clock)
         // TODO: Lock
         val product: Product = productRepository.findById(productId).orElseThrow { ProductNotFoundException() }
 
