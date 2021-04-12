@@ -39,12 +39,12 @@ class InvestorRepositoryTests {
 
     @Test
     fun `we should create investor`() {
-        val investor = Investor(null, "heyhey", "jusang", "ROLE_USER")
+        val investor = Investor(null, "heyhey", "jusang", "USER")
 
         val updated: Investor = testRepository.save(investor)
 
         assert(updated.name == "heyhey")
         assert(updated.password == "jusang")
-        assert(updated.role == "ROLE_USER")
+        assert(updated.role == "USER")
     }
 }

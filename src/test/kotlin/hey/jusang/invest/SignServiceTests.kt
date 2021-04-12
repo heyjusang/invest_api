@@ -16,9 +16,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import java.time.LocalDateTime
 import java.util.*
-
 
 @ExtendWith(SpringExtension::class)
 class SignServiceTests {
@@ -38,7 +36,7 @@ class SignServiceTests {
 
     @Test
     fun `we should get token when signing in`() {
-        val data = Investor(1, "username", "encodedPassword", "ROLE_USER")
+        val data = Investor(1, "username", "encodedPassword", "USER")
 
         whenever(investorRepository.findByName("username"))
             .thenReturn(Optional.of(data))
@@ -61,12 +59,11 @@ class SignServiceTests {
         whenever(passwordEncoder.encode("password"))
             .thenReturn("encodedPassword")
 
-        val investor = Investor(null, "username", "encodedPassword", "ROLE_USER")
+        val investor = Investor(null, "username", "encodedPassword", "USER")
 
         whenever(investorRepository.save(investor))
             .thenReturn(investor)
 
-        // TODO: investor equals(), hashcode()
         val result: InvestorDTO = signService.signUp("username", "password")
         assert(InvestorDTO(investor) == result)
     }
@@ -83,7 +80,7 @@ class SignServiceTests {
 
     @Test
     fun `we should get WrongPasswordException when signing in with wrong password`() {
-        val data = Investor(1, "username", "encodedPassword", "ROLE_USER")
+        val data = Investor(1, "username", "encodedPassword", "USER")
 
         whenever(investorRepository.findByName("username"))
             .thenReturn(Optional.of(data))

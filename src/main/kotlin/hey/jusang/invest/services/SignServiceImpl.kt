@@ -17,7 +17,7 @@ class SignServiceImpl(
     val jwtTokenProvider: JwtTokenProvider
 ) : SignService {
     override fun signIn(name: String, password: String): String {
-        val investor = investorRepository.findByName(name).orElseThrow{ UserNotFoundException() }
+        val investor = investorRepository.findByName(name).orElseThrow { UserNotFoundException() }
         val investorDTO = InvestorDTO(investor)
 
         if (!passwordEncoder.matches(password, investorDTO.password))
@@ -29,14 +29,9 @@ class SignServiceImpl(
     override fun signUp(name: String, password: String): InvestorDTO {
         if (investorRepository.countByName(name) != 0L) throw UserAlreadyExistedException()
 
-        // TODO: DTO ?
-        val investorDTO = InvestorDTO()
-        investorDTO.name = name
-        investorDTO.password = passwordEncoder.encode(password)
-        investorDTO.role = "ROLE_USER"
-
+        val investorDTO = InvestorDTO(null, name, passwordEncoder.encode(password), "USER")
         val investor: Investor = investorDTO.toEntity()
-        // TODO: fail check ?
+
         return InvestorDTO(investorRepository.save(investor))
     }
 }

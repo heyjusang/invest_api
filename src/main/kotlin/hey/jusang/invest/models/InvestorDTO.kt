@@ -8,13 +8,7 @@ data class InvestorDTO(
     var password: String? = null,
     var role: String? = null
 ) {
-
-    constructor(investor: Investor) : this() {
-        id = investor.id
-        name = investor.name
-        password = investor.password
-        role = investor.role
-    }
+    constructor(investor: Investor) : this(investor.id, investor.name, investor.password, investor.role)
 
     fun toEntity(): Investor {
         return Investor(id, name, password, role)
