@@ -5,9 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import hey.jusang.invest.exceptions.ErrorCode
-import hey.jusang.invest.entities.Investment
-import hey.jusang.invest.entities.Product
-import hey.jusang.invest.entities.Investor
 import hey.jusang.invest.models.InvestmentDTO
 import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.models.ProductDTO
@@ -17,8 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.jdbc.Sql
-import org.springframework.test.context.jdbc.SqlGroup
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -33,9 +28,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.streams.toList
-
-
-// TODO: check all tests
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -116,16 +108,21 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create investment and get 1 investment when requesting a list of investment`() {
-        createInvestment(newInvestorId, normalProductId, 10000)
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
-
-        val resultActions: ResultActions = getInvestments(newInvestorId)
-        resultActions.andExpect(status().isOk)
+        val resultActions: ResultActions = createInvestment(newInvestorId, normalProductId, 10000)
+        resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<Investment> = objectMapper.readValue(content)
+        val investment: InvestmentDTO = objectMapper.readValue(content)
+
+        assert(investment.userId == newInvestorId)
+        assert(investment.productId == normalProductId)
+        assert(investment.amount == 10000)
+
+        val resultActions2: ResultActions = getInvestments(newInvestorId)
+        resultActions2.andExpect(status().isOk)
+
+        val content2: String = resultActions2.andReturn().response.contentAsString
+        val investments: List<InvestmentDTO> = objectMapper.readValue(content2)
 
         assert(investments.size == 1)
         assert(investments[0].amount == 10000)
@@ -135,16 +132,21 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create investment and updated product should be returned when request a list of product`() {
-        createInvestment(newInvestorId, lastChanceProductId, 1)
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
-
-        val resultActions: ResultActions = getProducts()
-        resultActions.andExpect(status().isOk)
+        val resultActions: ResultActions = createInvestment(newInvestorId, lastChanceProductId, 1)
+        resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val investment: InvestmentDTO = objectMapper.readValue(content)
+
+        assert(investment.userId == newInvestorId)
+        assert(investment.productId == lastChanceProductId)
+        assert(investment.amount == 1)
+
+        val resultActions2: ResultActions = getProducts()
+        resultActions2.andExpect(status().isOk)
+
+        val content2: String = resultActions2.andReturn().response.contentAsString
+        val products: List<ProductDTO> = objectMapper.readValue(content2)
 
         val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
@@ -263,7 +265,7 @@ class InvestApplicationTests {
                 }
 
                 val content: String = resultActions.andReturn().response.contentAsString
-                val investments: List<Investment> = objectMapper.readValue(content)
+                val investments: List<InvestmentDTO> = objectMapper.readValue(content)
 
                 for (investment in investments) {
                     if (investment.amount <= 0 || investment.userId != i) {
@@ -463,7 +465,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<Investment> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
         assert(investments.isEmpty())
     }
 
@@ -472,9 +474,9 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<Product> = objectMapper.readValue(content)
+        val products: List<ProductDTO> = objectMapper.readValue(content)
 
-        val checkProducts: List<Product> = products.stream().filter { it.id == productId }.toList()
+        val checkProducts: List<ProductDTO> = products.stream().filter { it.id == productId }.toList()
 
         when (productId) {
             invalidProductId -> {

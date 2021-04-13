@@ -7,8 +7,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockitokotlin2.whenever
 import hey.jusang.invest.controllers.InvestmentController
 import hey.jusang.invest.exceptions.*
-import hey.jusang.invest.entities.Investment
-import hey.jusang.invest.entities.Product
 import hey.jusang.invest.models.InvestmentDTO
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.InvestmentService
@@ -40,7 +38,7 @@ class InvestmentControllerTests {
     @MockBean
     lateinit var jwtTokenProvider: JwtTokenProvider
 
-    var objectMapper: ObjectMapper = ObjectMapper().registerModules(KotlinModule(), JavaTimeModule())
+    private val objectMapper: ObjectMapper = ObjectMapper().registerModules(KotlinModule(), JavaTimeModule())
 
     @Test
     fun `mock mvc should be configured`() {
@@ -108,14 +106,17 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should create investment`() {
+        val data = InvestmentDTO(1, 1, 1, 10000)
         whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
+            .thenReturn(data)
 
-        createInvestment(1, 1, 10000)
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-                // TODO: objectMapper
-            //.andExpect(jsonPath("$.success").value(true))
+        val resultActions: ResultActions = createInvestment(1, 1, 10000)
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val investment: InvestmentDTO = objectMapper.readValue(content)
+
+        assert(investment == data)
     }
 
     @Test
@@ -217,7 +218,7 @@ class InvestmentControllerTests {
     @WithAnonymousUser
     fun `we cannot create investment without authentication`() {
         whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(InvestmentDTO(1, 1, 1,10000))
+            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isForbidden)
@@ -239,10 +240,7 @@ class InvestmentControllerTests {
     @WithAnonymousUser
     fun `we cannot get investments without authentication`() {
         val data: List<InvestmentDTO> = listOf(
-            InvestmentDTO(
-                4, 1, 1, 10000
-            // TODO : ProductDTO
-            )
+            InvestmentDTO(4, 1, 1, 10000)
         )
 
         whenever(investmentService.getInvestments(1)).thenReturn(data)
@@ -255,10 +253,7 @@ class InvestmentControllerTests {
     @WithMockUser(username = "2")
     fun `we cannot get investments of others`() {
         val data: List<InvestmentDTO> = listOf(
-            InvestmentDTO(
-                4, 1, 1,  10000
-            // TODO: ProductDTO
-            )
+            InvestmentDTO(4, 1, 1, 10000)
         )
 
         whenever(investmentService.getInvestments(1)).thenReturn(data)

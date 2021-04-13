@@ -22,8 +22,10 @@ import java.util.*
 class SignServiceTests {
     @Mock
     lateinit var investorRepository: InvestorRepository
+
     @Mock
     lateinit var jwtTokenProvider: JwtTokenProvider
+
     @Mock
     lateinit var passwordEncoder: PasswordEncoder
 

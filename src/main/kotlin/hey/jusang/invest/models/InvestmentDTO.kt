@@ -1,7 +1,6 @@
 package hey.jusang.invest.models
 
 import hey.jusang.invest.entities.Investment
-import java.time.LocalDateTime
 
 data class InvestmentDTO(
     var id: Long? = null,

@@ -1,6 +1,5 @@
 package hey.jusang.invest.utils
 
-import hey.jusang.invest.entities.Investor
 import hey.jusang.invest.models.InvestorDTO
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws

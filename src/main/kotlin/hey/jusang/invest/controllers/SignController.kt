@@ -14,7 +14,6 @@ import java.sql.SQLException
 
 @RestController
 class SignController(val signService: SignService) {
-
     @PostMapping("/signin")
     fun signIn(
         @RequestParam("name", required = true) name: String,

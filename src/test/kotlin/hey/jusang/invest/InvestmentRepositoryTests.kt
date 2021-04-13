@@ -10,7 +10,6 @@ import org.springframework.dao.DataIntegrityViolationException
 
 @DataJpaTest
 class InvestmentRepositoryTests {
-
     @Autowired
     lateinit var testRepository: InvestmentRepository
 

@@ -15,14 +15,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.*
 import java.util.*
 
 @ExtendWith(SpringExtension::class)
 class InvestmentServiceTests {
-
     @Mock
     lateinit var investmentRepository: InvestmentRepository
 
@@ -92,28 +90,26 @@ class InvestmentServiceTests {
 
     @Test
     fun `we should create investment`() {
-        // TODO: investment equals(), hashcode()
-        /*
-        whenever(productRepository.findById(5))
-            .thenReturn(
-                Optional.of(
-                    Product(
-                        5, "product 5", 500000, 20000, 1,
-                        LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                        LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
-                    )
-                )
-            )
+        val investment = Investment(null, 1, 5, 10)
+        val product = Product(
+            5, "product 5", 500000, 20000, 1,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+        )
 
-        whenever(investmentRepository.insertInvestment(1, 10, 5))
-            .thenReturn(1)
+        whenever(productRepository.findByIdForUpdate(5))
+            .thenReturn(Optional.of(product))
 
-        whenever(investmentRepository.updateProduct(10, 5))
-            .thenReturn(1)
+        whenever(investmentRepository.save(investment))
+            .thenReturn(investment)
 
-        val success: Boolean = investmentService.createInvestment(1, 5, 10)
-        assert(success)
-         */
+        product.currentInvestingAmount += 10
+        product.investorCount += 1
+        whenever(productRepository.save(product))
+            .thenReturn(product)
+
+        val investmentDTO: InvestmentDTO = investmentService.createInvestment(1, 5, 10)
+        assert(investmentDTO.toEntity() == investment)
     }
 
     @Test
@@ -125,7 +121,7 @@ class InvestmentServiceTests {
 
     @Test
     fun `we should get ProductNotFoundException while creating investment with invalid product id`() {
-        whenever(productRepository.findById(9999))
+        whenever(productRepository.findByIdForUpdate(9999))
             .thenReturn(Optional.ofNullable(null))
 
         Assertions.assertThrows(ProductNotFoundException::class.java) {
@@ -135,7 +131,7 @@ class InvestmentServiceTests {
 
     @Test
     fun `we should get ProductNotOpenedException while creating investment with not opened product`() {
-        whenever(productRepository.findById(5))
+        whenever(productRepository.findByIdForUpdate(5))
             .thenReturn(
                 Optional.of(
                     Product(
@@ -153,7 +149,7 @@ class InvestmentServiceTests {
 
     @Test
     fun `we should get ProductClosedException while creating investment with closed product`() {
-        whenever(productRepository.findById(5))
+        whenever(productRepository.findByIdForUpdate(5))
             .thenReturn(
                 Optional.of(
                     Product(
@@ -171,7 +167,7 @@ class InvestmentServiceTests {
 
     @Test
     fun `we should get TotalInvestingAmountExceededException while creating investment with exceeded amount`() {
-        whenever(productRepository.findById(5))
+        whenever(productRepository.findByIdForUpdate(5))
             .thenReturn(
                 Optional.of(
                     Product(

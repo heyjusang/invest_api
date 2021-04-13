@@ -35,8 +35,7 @@ class InvestmentServiceImpl(
         if (amount <= 0) throw InvalidAmountException()
 
         val current: LocalDateTime = LocalDateTime.now(clock)
-        // TODO: Lock
-        val product: Product = productRepository.findById(productId).orElseThrow { ProductNotFoundException() }
+        val product: Product = productRepository.findByIdForUpdate(productId).orElseThrow { ProductNotFoundException() }
 
         if (product.startedAt!! > current) {
             throw ProductNotOpenedException()
@@ -50,7 +49,7 @@ class InvestmentServiceImpl(
             throw TotalInvestingAmountExceededException()
         }
 
-        val investmentDTO: InvestmentDTO = InvestmentDTO()
+        val investmentDTO = InvestmentDTO()
         investmentDTO.userId = userId
         investmentDTO.productId = productId
         investmentDTO.amount = amount
@@ -60,6 +59,7 @@ class InvestmentServiceImpl(
         investmentRepository.save(investment)
 
         product.currentInvestingAmount += amount
+        product.investorCount += 1
         productRepository.save(product)
 
         return investmentDTO

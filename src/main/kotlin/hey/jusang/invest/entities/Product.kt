@@ -25,7 +25,7 @@ class Product(
     @NotNull
     var startedAt: LocalDateTime? = null,
     @NotNull
-    var finishedAt: LocalDateTime? = null,
+    var finishedAt: LocalDateTime? = null
 ) {
     @CreatedDate
     var createdAt: LocalDateTime? = null
