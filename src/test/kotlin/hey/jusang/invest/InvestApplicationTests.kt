@@ -288,6 +288,8 @@ class InvestApplicationTests {
         assert(futures.stream().filter { it.get() == false }.count() == 0L)
     }
 
+    // TODO : handle @Transactional (for rollback) in multi-thread test.
+    // `we should get 23 product ...` test fails because of this test
     @Test
     fun `we should handle multiple request for creating investments`() {
         val latch = CountDownLatch(10)
@@ -375,10 +377,14 @@ class InvestApplicationTests {
 
     @Test
     fun `we should sign up and cannot sign up with same user name`() {
-        signUp("newname", "password")
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
+        val resultActions: ResultActions = signUp("newname", "password")
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val user: InvestorDTO = objectMapper.readValue(content)
+
+        assert(user.name == "newname")
+        assert(user.role == "USER")
 
         signUp("newname", "password")
             .andExpect(status().isBadRequest)
@@ -388,10 +394,14 @@ class InvestApplicationTests {
 
     @Test
     fun `we should sign in`() {
-        signUp("newname", "password")
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
+        val resultActions: ResultActions = signUp("newname", "password")
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val user: InvestorDTO = objectMapper.readValue(content)
+
+        assert(user.name == "newname")
+        assert(user.role == "USER")
 
         signIn("newname", "password")
             .andExpect(status().isOk)
@@ -409,10 +419,14 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot sign in with wrong password`() {
-        signUp("newname", "password")
-            .andExpect(status().isCreated)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.success").value(true))
+        val resultActions: ResultActions = signUp("newname", "password")
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val user: InvestorDTO = objectMapper.readValue(content)
+
+        assert(user.name == "newname")
+        assert(user.role == "USER")
 
         signIn("newname", "wrongPassword")
             .andExpect(status().isUnauthorized)
