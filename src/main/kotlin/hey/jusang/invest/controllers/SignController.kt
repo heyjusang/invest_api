@@ -2,6 +2,7 @@ package hey.jusang.invest.controllers
 
 import hey.jusang.invest.exceptions.BaseException
 import hey.jusang.invest.exceptions.ErrorMessage
+import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.services.SignService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -13,7 +14,6 @@ import java.sql.SQLException
 
 @RestController
 class SignController(val signService: SignService) {
-
     @PostMapping("/signin")
     fun signIn(
         @RequestParam("name", required = true) name: String,
@@ -27,9 +27,8 @@ class SignController(val signService: SignService) {
     fun signUp(
         @RequestParam("name", required = true) name: String,
         @RequestParam("password", required = true) password: String
-    ): ResponseEntity<Map<String, Boolean>> {
-        val success: Boolean = signService.signUp(name, password)
-        return ResponseEntity(mapOf("success" to success), HttpStatus.CREATED)
+    ): ResponseEntity<InvestorDTO> {
+        return ResponseEntity(signService.signUp(name, password), HttpStatus.CREATED)
     }
 
     @ExceptionHandler(SQLException::class)

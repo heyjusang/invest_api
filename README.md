@@ -4,7 +4,7 @@
 * Spring Boot 2.4.3
   * Dependency
     * spring-boot-starter-web (Spring MVC)
-    * mybatis-spring-boot-starter (Mybatis)
+    * spring-boot-starter-data-jpa (JPA)
     * h2 (H2 in-memory database (mode: oracle))
     * mockito-kotlin (Mockito for Kotlin)
     * spring-boot-starter-security (Spring Authentication)
@@ -23,19 +23,19 @@
   * [GET] /products
   * 리턴
   ``` json
-  [{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":"N"}, ...]
+  [{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}, ...]
   ```
 * 유저의 투자 내역 조회
   * [GET] /investments (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String})
   * 리턴
   ``` json
-  [{"id":1,"userId":10,"productId":3,"productTitle":"Sold out product","totalInvestingAmount":2000000,"amount":1000000,"createdAt":"2021-03-13T22:01:01"}, ...]
+  [{"id":1,"userId":10,"productId":3,"amount":1000000,"productDTO":{"id":3,"title":"Sold out product","totalInvestingAmount":2000000,"currentInvestingAmount":2000000,"investorCount":2,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":true}}, ...]
   ```
 * 투자 하기
   * [POST] /investment (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {product_id: Int, amount: Int})
   * 리턴
   ``` json
-  {"success":true}
+  {"id":null,"userId":99,"productId":1,"amount":10000,"productDTO":null}
   ```
 * 에러 발생 및 처리 실패 시
   * 리턴
@@ -111,14 +111,21 @@
 |INVESTOR|"PASSWORD IS NOT NULL|
 
 ## 프로젝트 구성
-### models/
+### entities/
 * Product (상품 정보)
-  * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, soldOut
+  * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, createdAt
 * Investment (투자 정보)
-  * id, userId, productId, productTitle, totalInvestingAmount, amount, createdAt
-* User (유저 정보)
+  * id, userId, productId, amount, product, createdAt
+* Investor (유저 정보)
   * id, name, password, role, createdAt
-  
+
+### models/
+* ProductDTO
+  * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, soldOut
+* InvestmentDTO
+  * id, userId, productId, amount, productDTO, createdAt
+* InvestorDTO
+  * id, name, password, role
 ### controllers/
 * InvestmentController
   * getProducts()
@@ -134,7 +141,7 @@
     * [POST] /investment (Header: {X-USER-ID: Int}, Param: {product_id: Int, amount: Int})
     * X-USER-ID에 해당하는 유저가 product_id에 해당하는 상품에 amount만큼의 금액을 투자
     * Authentication 정보의 user id와 X-USER-ID가 일치해야함
-    * 성공 시, {success: true} 형태로 리턴
+    * 성공 시, investment 리턴
     * 실패 시, 실패 원인에 따라 {erroCode: Int, message: String} 형태로 리턴
   * sqlException() (ExceptionHandler)
     * DB 에러를 핸들링
@@ -150,7 +157,7 @@
   * signUp()
     * [POST] /signup (Param: {name: String, password: String})
     * 회원가입
-    * 성공 시, {success: true} 형태로 리턴
+    * 성공 시, investor 리턴
   * sqlException() (ExceptionHandler)
   * baseException() (ExceptionHandler)
     
@@ -179,56 +186,15 @@
     * 있는 유저 -> UserAlreadyExistedException
     
 ### repositories/
+* ProductRepository
+  * findByIdForUpdate()
+    * select p from Product p where p.id = :id
+    * LockModeType.PESSIMISTIC_WRITE
 * InvestmentRepository
-  * DB와 통신을 위한 쿼리를 정의한 Mybatis Mapper
-  * selectProducts()
-    * 전체 투자 상품 조회를 위한 쿼리  
-    ``` sql
-    SELECT id, title, total_investing_amount, current_investing_amount, investor_count, started_at, finished_at,
-      CASE WHEN total_investing_amount > current_investing_amount THEN 'N'
-      ELSE 'Y'
-      END AS sold_out
-    FROM product WHERE SYSDATE >= started_at AND SYSDATE < finished_at
-    ```
-  * selectInvestments()
-    * 유저의 투자 내역 조회를 위한 쿼리
-    ``` sql
-    SELECT i.id, i.user_id, i.product_id, p.title AS product_title, p.total_investing_amount, i.amount, i.created_at
-    FROM investment i, product p WHERE i.user_id = #{userId} AND p.id = i.product_id
-    ```
-  * selectProductForUpdate()
-    * 투자를 위한 Product를 가져오는 쿼리
-    ``` sql
-    SELECT * FROM product WHERE id = #{productId} FOR UPDATE
-    ```
-  * updateProduct()
-    * 투자한 Product를 업데이트하기 위한 쿼리
-    ``` sql
-    UPDATE product SET current_investing_amount = current_investing_amount + #{amount},
-      investor_count = investor_count + 1
-    WHERE id = #{productId}"
-    ```
-  * insertInvestment()
-    * 투자 내역을 생성하는 쿼리
-    ``` sql
-    INSERT INTO investment(user_id, amount, product_id) VALUES (#{userId}, #{amount}, #{productId})
-    ```
-* SignRepository
-  * selectUserByName()
-    * 유저정보 가져오는 쿼리
-    ``` sql
-    SELECT * FROM investor WHERE name = #{name}
-    ```
-  * selectUserCountByName()
-    * 유저 이름에 해당하는 유저가 있나 확인하는 쿼리
-    ``` sql
-    SELECT COUNT(*) FROM investor WHERE name = #{name}
-    ```
-  * insertUser()
-    * 새로운 유저 생성하는 쿼리
-    ``` sql
-    INSERT INTO investor(name, password) VALUES (#{name}, #{password})
-    ```
+  * findAllByUserId()
+* InvestorRepository
+  * findByName()
+  * countByName()
 ### exceptions/
 * 내부 로직에서 발생할 때 throw할 에러를 정의
 * ErrorCode
@@ -259,7 +225,7 @@
 * Product Table의 상품 정보를 업데이트할 때, current_investing_amount가 total_investing_amount 넘지 못하도록 Constraint 설정
 
 ### 해결방안 2 - Row-level Lock
-* 투자를 할 때, 투자할 상품을 SELECT FOR UPDATE 쿼리를 통해 가져옴
+* 투자를 할 때, 투자할 상품을 SELECT FOR UPDATE 쿼리를 통해 가져옴 (findByUserIdForUpdate() + LockModeType.PESSIMISTIC_WRITE)
 * 해당 쿼리를 통해, 다른 사용자들은 동일한 상품의 투자 시도에 대해 wait 상태
 * 투자에 성공하거나 에러 등의 이유로 실패한 후, 다른 사용자들이 투자 가능
 
@@ -291,32 +257,34 @@
 * 에러 발생 시 BaseException 리턴
 
 ## Test
-* 총 72개 테스트
-* 테스트에 필요한 sql script는 src/main/resources/data/에 있음
-  * schema.sql - 테스트에 필요한 스키마 생성
-  * data.sql - 테스트에 필요한 데이터 생성
-  * drop_db.sql - 테스트 완료 후 스키마 삭제
-* 위 sql script는 항상 수행하는 것은 아니고, 실제 DB와 통신이 필요한 Repository Layer 단위테스트와 Application 통합테스트에서만 사용
+* 총 73개 테스트
 
-### InvestmentRepositoryTests
-* 11개 테스트
+### ProductRepositoryTests
+* 6개 테스트
 * Repository Layer 기능 검사를 위한 단위 테스트
 
 | 테스트 이름 | 테스트 내용 |
 |---|---|
 |testRepository should be configured() | 환경 테스트 |
 |we should get 23 products (including 1 sold out) when requesting a list of product within the period()| getProducts() 테스트|
-|we should get 2 investments when requesting a list of investment for user with an ID of 10()| getInvestments() 테스트|
 |we should get product with an ID of 1| selectProductForUpdate() 테스트|
 |we cannot get product without proper ID| seleectProductForUpdate() 실패 테스트 - 없는 상품|
 |we should update product with an ID of 1| updateProduct() 테스트|
 |we cannot update product over total investing amount| updateProduct() 실패 테스트 - 금액 초과|
+
+### InvestmentRepositoryTests
+* 6개 테스트
+
+| 테스트 이름 | 테스트 내용 |
+|---|---|
+|testRepository should be configured() | 환경 테스트 |
+|we should get 2 investments when requesting a list of investment for user with an ID of 10()| getInvestments() 테스트|
 |we should create investment| createInvestment() 테스트|
 |we cannot create investment having same user id and same product id| createInvestment() 실패 테스트 - 동일 유저가 동일 상품 투자|
 |we cannot create investment having negative amount| createInvestment() 실패 테스트 - 음수의 금액 투자|
 |we cannot create investment having zero amount| createInvestment() 실패 테스트 - 0원 투자|
 
-### SignRepositoryTests
+### InvestorRepositoryTests
 * 5개 테스트
 
 | 테스트 이름 | 테스트 내용 |

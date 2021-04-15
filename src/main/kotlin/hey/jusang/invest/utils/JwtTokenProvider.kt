@@ -1,6 +1,6 @@
 package hey.jusang.invest.utils
 
-import hey.jusang.invest.models.User
+import hey.jusang.invest.models.InvestorDTO
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
 import io.jsonwebtoken.Jwts
@@ -8,6 +8,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import java.security.Key
@@ -27,12 +28,12 @@ class JwtTokenProvider {
         key = Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun createToken(user: User): String {
+    fun createToken(investor: InvestorDTO): String {
         val now = Date()
-        val claims: Claims = Jwts.claims().setSubject(user.id.toString())
-        claims["name"] = user.id.toString()
-        claims["password"] = user.password
-        claims["role"] = user.role
+        val claims: Claims = Jwts.claims().setSubject(investor.id.toString())
+        claims["name"] = investor.id.toString()
+        claims["password"] = investor.password
+        claims["role"] = investor.role
 
         return Jwts.builder()
             .setClaims(claims)
@@ -46,8 +47,7 @@ class JwtTokenProvider {
         val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
 
         // TODO: UserDetailsService
-        val builder: org.springframework.security.core.userdetails.User.UserBuilder =
-            org.springframework.security.core.userdetails.User.withUsername(claims["name"] as String)
+        val builder: User.UserBuilder = User.withUsername(claims["name"] as String)
                 .password(claims["password"] as String)
                 .roles(claims["role"] as String)
         val userDetails: UserDetails = builder.build()

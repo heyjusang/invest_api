@@ -3,8 +3,8 @@ package hey.jusang.invest.controllers
 import hey.jusang.invest.exceptions.BaseException
 import hey.jusang.invest.exceptions.ErrorMessage
 import hey.jusang.invest.exceptions.ForbiddenRequestException
-import hey.jusang.invest.models.Investment
-import hey.jusang.invest.models.Product
+import hey.jusang.invest.models.InvestmentDTO
+import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.InvestmentService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,15 +16,15 @@ import java.sql.SQLException
 @RestController
 class InvestmentController(val investmentService: InvestmentService) {
     @GetMapping("/products")
-    fun getProducts(): ResponseEntity<List<Product>> {
+    fun getProducts(): ResponseEntity<List<ProductDTO>> {
         return ResponseEntity(investmentService.getProducts(), HttpStatus.OK)
     }
 
     @GetMapping("/investments")
     fun getInvestments(
         authentication: Authentication,
-        @RequestHeader("X-USER-ID") userId: Int
-    ): ResponseEntity<List<Investment>> {
+        @RequestHeader("X-USER-ID") userId: Long
+    ): ResponseEntity<List<InvestmentDTO>> {
         checkAuthId(authentication, userId)
 
         return ResponseEntity(investmentService.getInvestments(userId), HttpStatus.OK)
@@ -33,14 +33,13 @@ class InvestmentController(val investmentService: InvestmentService) {
     @PostMapping("/investment")
     fun createInvestment(
         authentication: Authentication,
-        @RequestHeader("X-USER-ID") userId: Int,
-        @RequestParam("product_id") productId: Int,
+        @RequestHeader("X-USER-ID") userId: Long,
+        @RequestParam("product_id") productId: Long,
         @RequestParam("amount") amount: Int
-    ): ResponseEntity<Map<String, Boolean>> {
+    ): ResponseEntity<InvestmentDTO> {
         checkAuthId(authentication, userId)
 
-        val success: Boolean = investmentService.createInvestment(userId, productId, amount)
-        return ResponseEntity(mapOf("success" to success), HttpStatus.CREATED)
+        return ResponseEntity(investmentService.createInvestment(userId, productId, amount), HttpStatus.CREATED)
     }
 
     @ExceptionHandler(SQLException::class)
@@ -53,7 +52,7 @@ class InvestmentController(val investmentService: InvestmentService) {
         return ResponseEntity(ErrorMessage(e.errorCode, e.message), e.statusCode)
     }
 
-    private fun checkAuthId(authentication: Authentication, userId: Int) {
+    private fun checkAuthId(authentication: Authentication, userId: Long) {
         val details: UserDetails = authentication.principal as UserDetails
         val authId: String = details.username
 

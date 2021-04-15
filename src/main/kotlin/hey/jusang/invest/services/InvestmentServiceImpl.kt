@@ -1,36 +1,47 @@
 package hey.jusang.invest.services
 
 import hey.jusang.invest.exceptions.*
-import hey.jusang.invest.models.Investment
-import hey.jusang.invest.models.Product
+import hey.jusang.invest.entities.Investment
+import hey.jusang.invest.entities.Product
+import hey.jusang.invest.models.InvestmentDTO
+import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.repositories.InvestmentRepository
+import hey.jusang.invest.repositories.ProductRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Component
-class InvestmentServiceImpl(val investmentRepository: InvestmentRepository) : InvestmentService {
-    override fun getProducts(): List<Product> {
-        return investmentRepository.selectProducts()
+class InvestmentServiceImpl(
+    val investmentRepository: InvestmentRepository,
+    val productRepository: ProductRepository,
+    val clock: Clock
+) :
+    InvestmentService {
+    override fun getProducts(): List<ProductDTO> {
+        val current = LocalDateTime.now(clock)
+        return productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
+            .map { ProductDTO(it) }
     }
 
-    override fun getInvestments(userId: Int): List<Investment> {
-        return investmentRepository.selectInvestments(userId)
+    override fun getInvestments(userId: Long): List<InvestmentDTO> {
+        return investmentRepository.findAllByUserId(userId)
+            .map { InvestmentDTO(it) }
     }
 
     @Transactional
-    override fun createInvestment(userId: Int, productId: Int, amount: Int): Boolean {
+    override fun createInvestment(userId: Long, productId: Long, amount: Int): InvestmentDTO {
         if (amount <= 0) throw InvalidAmountException()
 
-        val current: LocalDateTime = LocalDateTime.now()
-        val product: Product =
-            investmentRepository.selectProductForUpdate(productId) ?: throw ProductNotFoundException()
+        val current: LocalDateTime = LocalDateTime.now(clock)
+        val product: Product = productRepository.findByIdForUpdate(productId).orElseThrow { ProductNotFoundException() }
 
-        if (product.startedAt > current) {
+        if (product.startedAt!! > current) {
             throw ProductNotOpenedException()
         }
 
-        if (product.finishedAt <= current) {
+        if (product.finishedAt!! <= current) {
             throw ProductClosedException()
         }
 
@@ -38,9 +49,19 @@ class InvestmentServiceImpl(val investmentRepository: InvestmentRepository) : In
             throw TotalInvestingAmountExceededException()
         }
 
-        val success = investmentRepository.insertInvestment(userId, amount, productId)
-        val count = investmentRepository.updateProduct(amount, productId)
+        val investmentDTO = InvestmentDTO()
+        investmentDTO.userId = userId
+        investmentDTO.productId = productId
+        investmentDTO.amount = amount
 
-        return count == 1 && success == 1
+        val investment: Investment = investmentDTO.toEntity()
+
+        investmentRepository.save(investment)
+
+        product.currentInvestingAmount += amount
+        product.investorCount += 1
+        productRepository.save(product)
+
+        return investmentDTO
     }
 }

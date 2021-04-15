@@ -1,11 +1,16 @@
 package hey.jusang.invest
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockitokotlin2.whenever
 import hey.jusang.invest.controllers.SignController
 import hey.jusang.invest.exceptions.ErrorCode
 import hey.jusang.invest.exceptions.UserAlreadyExistedException
 import hey.jusang.invest.exceptions.UserNotFoundException
 import hey.jusang.invest.exceptions.WrongPasswordException
+import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.services.SignService
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
@@ -26,9 +31,9 @@ class SignControllerTests {
     @MockBean
     lateinit var signService: SignService
 
-    // TODO : need ?
     @MockBean
     lateinit var jwtTokenProvider: JwtTokenProvider
+    private val objectMapper: ObjectMapper = ObjectMapper().registerModules(KotlinModule(), JavaTimeModule())
 
     @Test
     fun `mock mvc should be configured`() {
@@ -47,19 +52,23 @@ class SignControllerTests {
 
     @Test
     fun `we should sign up`() {
+        val data = InvestorDTO(1, "username", "password")
         whenever(signService.signUp("username", "password"))
-            .thenReturn(true)
+            .thenReturn(data)
 
-        signUp("username", "password")
-            .andExpect(status().isCreated)
-            .andExpect(MockMvcResultMatchers.jsonPath("$").isNotEmpty)
-            .andExpect(MockMvcResultMatchers.jsonPath("$.success").value(true))
+        val resultActions = signUp("username", "password")
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val investor: InvestorDTO = objectMapper.readValue(content)
+
+        assert(investor == data)
     }
 
     @Test
     fun `we should handle UserNotFoundException while signing in with wrong name`() {
         whenever(signService.signIn("wrong name", "password"))
-            .thenAnswer{ throw UserNotFoundException() }
+            .thenAnswer { throw UserNotFoundException() }
 
         signIn("wrong name", "password")
             .andExpect(status().isNotFound)
@@ -70,7 +79,7 @@ class SignControllerTests {
     @Test
     fun `we should handle WrongPasswordException while signing in with wrong password`() {
         whenever(signService.signIn("username", "wrong password"))
-            .thenAnswer{ throw WrongPasswordException() }
+            .thenAnswer { throw WrongPasswordException() }
 
         signIn("username", "wrong password")
             .andExpect(status().isUnauthorized)
@@ -81,7 +90,7 @@ class SignControllerTests {
     @Test
     fun `we should handle UserAlreadyExistedException while signing up with existed name`() {
         whenever(signService.signUp("existed", "password"))
-            .thenAnswer{ throw UserAlreadyExistedException() }
+            .thenAnswer { throw UserAlreadyExistedException() }
 
         signUp("existed", "password")
             .andExpect(status().isBadRequest)
