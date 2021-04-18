@@ -5,7 +5,6 @@ import hey.jusang.invest.exceptions.ErrorMessage
 import hey.jusang.invest.exceptions.ForbiddenRequestException
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.ProductService
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -27,10 +26,9 @@ class ProductController(val productService: ProductService) {
         @RequestHeader("X-USER-ID") userId: Long,
         @RequestParam("title") title: String,
         @RequestParam("total_investing_amount") totalInvestingAmount: Int,
-        @RequestParam("started_at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startedAt: LocalDateTime,
-        @RequestParam("finished_at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) finishedAt: LocalDateTime
+        @RequestParam("started_at") startedAt: LocalDateTime,
+        @RequestParam("finished_at") finishedAt: LocalDateTime
     ): ResponseEntity<ProductDTO> {
-        // TODO: DateTimeFormatConfiguration
         // TODO: change RequestParam to ProductDTO
         checkAuthId(authentication, userId)
 
