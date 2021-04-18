@@ -10,7 +10,8 @@ import hey.jusang.invest.exceptions.ErrorCode
 import hey.jusang.invest.exceptions.InvalidInvestingPeriodException
 import hey.jusang.invest.exceptions.InvalidProductTitleException
 import hey.jusang.invest.exceptions.InvalidTotalInvestingAmountException
-import hey.jusang.invest.models.ProductDTO
+import hey.jusang.invest.models.CreateProductDTO
+import hey.jusang.invest.models.ResponseProductDTO
 import hey.jusang.invest.services.ProductService
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
@@ -49,11 +50,11 @@ class ProductControllerTests {
 
     @Test
     fun `we should get products`() {
-        val data: List<ProductDTO> = listOf(
-            ProductDTO(
+        val data: List<ResponseProductDTO> = listOf(
+            ResponseProductDTO(
                 1, "product 1", 400000, 10000, 1, time1, time2, false
             ),
-            ProductDTO(
+            ResponseProductDTO(
                 5, "product 5", 500000, 20000, 1, time1, time2, false
             )
         )
@@ -64,7 +65,7 @@ class ProductControllerTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content)
 
         assert(products == data)
     }
@@ -83,17 +84,17 @@ class ProductControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should create product`() {
-        val data = ProductDTO(
+        val data = ResponseProductDTO(
             1, "product name", 10000, 0, 0, time1, time2, false
         )
 
-        whenever(productService.createProduct("product name", 10000, time1, time2)).thenReturn(data)
+        whenever(productService.createProduct(CreateProductDTO("product name", 10000, time1, time2))).thenReturn(data)
 
         val resultActions: ResultActions = createProduct(1, "product name", 10000, time1, time2)
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val product: ProductDTO = objectMapper.readValue(content)
+        val product: ResponseProductDTO = objectMapper.readValue(content)
 
         assert(product == data)
     }
@@ -101,8 +102,8 @@ class ProductControllerTests {
     @Test
     @WithAnonymousUser
     fun `we cannot create product without authentication`() {
-        whenever(productService.createProduct("product name", 10000, time1, time2))
-            .thenReturn(ProductDTO(1, "product name", 10000, 0, 0, time1, time2, false))
+        whenever(productService.createProduct(CreateProductDTO("product name", 10000, time1, time2)))
+            .thenReturn(ResponseProductDTO(1, "product name", 10000, 0, 0, time1, time2, false))
 
         createProduct(1, "product name", 10000, time1, time2)
             .andExpect(status().isForbidden)
@@ -111,7 +112,7 @@ class ProductControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle SQLException while creating product with database problem`() {
-        whenever(productService.createProduct("product name", 1000, time1, time2))
+        whenever(productService.createProduct(CreateProductDTO("product name", 1000, time1, time2)))
             .thenAnswer { throw SQLException("error message") }
 
         createProduct(1, "product name", 1000, time1, time2)
@@ -123,7 +124,7 @@ class ProductControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle InvalidProductTitleException while creating product with invalid title`() {
-        whenever(productService.createProduct("", 10000, time1, time2))
+        whenever(productService.createProduct(CreateProductDTO("", 10000, time1, time2)))
             .thenAnswer { throw InvalidProductTitleException() }
 
         createProduct(1, "", 10000, time1, time2)
@@ -135,7 +136,7 @@ class ProductControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle InvalidTotalInvestingAmountException while creating product with invalid total amount`() {
-        whenever(productService.createProduct("product name", -10000, time1, time2))
+        whenever(productService.createProduct(CreateProductDTO("product name", -10000, time1, time2)))
             .thenAnswer { throw InvalidTotalInvestingAmountException() }
 
         createProduct(1, "product name", -10000, time1, time2)
@@ -147,7 +148,7 @@ class ProductControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle InvalidInvestingPeriodException while creating product with invalid investing period`() {
-        whenever(productService.createProduct("product name", 10000, time2, time1))
+        whenever(productService.createProduct(CreateProductDTO("product name", 10000, time2, time1)))
             .thenAnswer { throw InvalidInvestingPeriodException() }
 
         createProduct(1, "product name", 10000, time2, time1)
@@ -167,9 +168,9 @@ class ProductControllerTests {
             MockMvcRequestBuilders.post("/product")
                 .header("X-USER-ID", userId)
                 .param("title", title)
-                .param("total_investing_amount", totalInvestingAmount.toString())
-                .param("started_at", startedAt.toString())
-                .param("finished_at", finishedAt.toString())
+                .param("totalInvestingAmount", totalInvestingAmount.toString())
+                .param("startedAt", startedAt.toString())
+                .param("finishedAt", finishedAt.toString())
         )
     }
 

@@ -8,7 +8,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import hey.jusang.invest.controllers.InvestmentController
 import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.models.InvestmentDTO
-import hey.jusang.invest.models.ProductDTO
+import hey.jusang.invest.models.ResponseProductDTO
 import hey.jusang.invest.services.InvestmentService
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
@@ -50,7 +50,7 @@ class InvestmentControllerTests {
         val data: List<InvestmentDTO> = listOf(
             InvestmentDTO(
                 4, 1, 1, 10000,
-                ProductDTO(
+                ResponseProductDTO(
                     1, "product 1", 2000000, 10000, 1,
                     LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
                     LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
@@ -58,7 +58,7 @@ class InvestmentControllerTests {
             ),
             InvestmentDTO(
                 15, 1, 33, 45000,
-                ProductDTO(
+                ResponseProductDTO(
                     33, "product 33", 3000000, 45000, 1,
                     LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
                     LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false

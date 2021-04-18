@@ -92,36 +92,26 @@ class ProductRepositoryTests {
 
     @Test
     fun `we should create product`() {
-        val product = Product()
-        product.title = "product name"
-        product.totalInvestingAmount = 10000
-        product.startedAt = LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
-        product.finishedAt = LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+        val product = Product(
+            "product name",
+            10000,
+            LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+            LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+        )
 
         testRepository.save(product)
         // TODO: check success
     }
 
     @Test
-    fun `we cannot create product with empty title`() {
-        Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val product = Product()
-            product.totalInvestingAmount = 10000
-            product.startedAt = LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
-            product.finishedAt = LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
-
-            testRepository.save(product)
-        }
-    }
-
-    @Test
     fun `we cannot create product with negative total investing amount`() {
         Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val product = Product()
-            product.title = "product name"
-            product.totalInvestingAmount = -10000
-            product.startedAt = LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
-            product.finishedAt = LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+            val product = Product(
+                "product name",
+                -10000,
+                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+            )
 
             testRepository.save(product)
         }
@@ -130,11 +120,12 @@ class ProductRepositoryTests {
     @Test
     fun `we cannot create product with wrong range date`() {
         Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val product = Product()
-            product.title = "product name"
-            product.totalInvestingAmount = 10000
-            product.finishedAt = LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
-            product.startedAt = LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+            val product = Product(
+                "product name",
+                10000,
+                LocalDateTime.of(2022, Month.MARCH, 10, 11, 11, 11),
+                LocalDateTime.of(2021, Month.APRIL, 10, 11, 11, 11)
+            )
 
             testRepository.save(product)
         }

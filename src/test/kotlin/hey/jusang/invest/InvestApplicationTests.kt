@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import hey.jusang.invest.exceptions.ErrorCode
 import hey.jusang.invest.models.InvestmentDTO
 import hey.jusang.invest.models.InvestorDTO
-import hey.jusang.invest.models.ProductDTO
+import hey.jusang.invest.models.ResponseProductDTO
 import hey.jusang.invest.utils.JwtTokenProvider
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -72,7 +72,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content)
 
         assert(products.size == 23)
 
@@ -146,9 +146,10 @@ class InvestApplicationTests {
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content2)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content2)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ResponseProductDTO> =
+            products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
@@ -321,12 +322,12 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id in 10L..19L }.toList()
+        val updatedProducts: List<ResponseProductDTO> = products.stream().filter { it.id in 10L..19L }.toList()
         assert(updatedProducts.size == 10)
         for (i in 0..9) {
-            val id :Long = updatedProducts[i].id!!
+            val id: Long = updatedProducts[i].id!!
             assert(updatedProducts[i].currentInvestingAmount == 110 + id.toInt())
             assert(updatedProducts[i].investorCount == 1)
             assert(!updatedProducts[i].soldOut!!)
@@ -365,9 +366,10 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ResponseProductDTO> =
+            products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
 
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
@@ -488,9 +490,9 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ResponseProductDTO> = objectMapper.readValue(content)
 
-        val checkProducts: List<ProductDTO> = products.stream().filter { it.id == productId }.toList()
+        val checkProducts: List<ResponseProductDTO> = products.stream().filter { it.id == productId }.toList()
 
         when (productId) {
             invalidProductId -> {

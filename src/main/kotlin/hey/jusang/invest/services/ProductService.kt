@@ -1,11 +1,9 @@
 package hey.jusang.invest.services
 
-import hey.jusang.invest.models.ProductDTO
-import java.time.LocalDateTime
+import hey.jusang.invest.models.CreateProductDTO
+import hey.jusang.invest.models.ResponseProductDTO
 
 interface ProductService {
-    fun getProducts(): List<ProductDTO>
-    fun createProduct(
-        title: String, totalInvestingAmount: Int, startedAt: LocalDateTime, finishedAt: LocalDateTime
-    ): ProductDTO
+    fun getProducts(): List<ResponseProductDTO>
+    fun createProduct(productDTO: CreateProductDTO): ResponseProductDTO
 }

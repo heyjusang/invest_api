@@ -9,13 +9,18 @@ import hey.jusang.invest.repositories.InvestmentRepository
 import hey.jusang.invest.repositories.ProductRepository
 import hey.jusang.invest.services.InvestmentServiceImpl
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.Month
+import java.time.ZoneId
 import java.util.*
 
 @ExtendWith(SpringExtension::class)
@@ -26,8 +31,22 @@ class InvestmentServiceTests {
     @Mock
     lateinit var productRepository: ProductRepository
 
+    @Mock
+    lateinit var clock: Clock
+
     @InjectMocks
     lateinit var investmentService: InvestmentServiceImpl
+
+    @BeforeEach
+    fun setup() {
+        val fixedClock: Clock = Clock.fixed(
+            LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11).atZone(ZoneId.systemDefault()).toInstant(),
+            ZoneId.systemDefault()
+        )
+
+        whenever(clock.instant()).thenReturn(fixedClock.instant())
+        whenever(clock.zone).thenReturn(fixedClock.zone)
+    }
 
     @Test
     fun `mock should be configured`() {
@@ -55,7 +74,7 @@ class InvestmentServiceTests {
     fun `we should create investment`() {
         val investment = Investment(null, 1, 5, 10)
         val product = Product(
-            5, "product 5", 500000, 20000, 1,
+            "product 5", 500000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -98,7 +117,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2022, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
                     )
@@ -116,7 +135,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2020, Month.MARCH, 21, 5, 11, 11)
                     )
@@ -134,7 +153,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
                     )

@@ -29,11 +29,11 @@ class InvestmentServiceImpl(
         val current: LocalDateTime = LocalDateTime.now(clock)
         val product: Product = productRepository.findByIdForUpdate(productId).orElseThrow { ProductNotFoundException() }
 
-        if (product.startedAt!! > current) {
+        if (product.startedAt > current) {
             throw ProductNotOpenedException()
         }
 
-        if (product.finishedAt!! <= current) {
+        if (product.finishedAt <= current) {
             throw ProductClosedException()
         }
 

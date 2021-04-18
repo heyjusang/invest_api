@@ -5,7 +5,8 @@ import hey.jusang.invest.entities.Product
 import hey.jusang.invest.exceptions.InvalidInvestingPeriodException
 import hey.jusang.invest.exceptions.InvalidProductTitleException
 import hey.jusang.invest.exceptions.InvalidTotalInvestingAmountException
-import hey.jusang.invest.models.ProductDTO
+import hey.jusang.invest.models.CreateProductDTO
+import hey.jusang.invest.models.ResponseProductDTO
 import hey.jusang.invest.repositories.ProductRepository
 import hey.jusang.invest.services.ProductServiceImpl
 import org.junit.jupiter.api.Assertions
@@ -50,13 +51,11 @@ class ProductServiceTests {
     fun `we should get products`() {
         val fixedNow = LocalDateTime.now(clock)
         val data: List<Product> = listOf(
-            Product(
-                1, "product 1", 400000, 10000, 1,
+            Product("product 1", 400000,
                 LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
                 LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11),
             ),
-            Product(
-                5, "product 5", 500000, 20000, 1,
+            Product("product 5", 500000,
                 LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                 LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
             )
@@ -64,38 +63,43 @@ class ProductServiceTests {
 
         whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(fixedNow, fixedNow)).thenReturn(data)
 
-        val products: List<ProductDTO> = productService.getProducts()
-        assert(products == data.map { ProductDTO(it) })
+        val products: List<ResponseProductDTO> = productService.getProducts()
+        assert(products == data.map { ResponseProductDTO(it) })
     }
 
     @Test
     fun `we should create product`() {
-        val product = Product()
-        product.title = "product name"
-        product.totalInvestingAmount = 10000
-        product.startedAt = LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
-        product.finishedAt = LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
-
-        whenever(productRepository.save(product)).thenReturn(product)
-
-        val productDTO: ProductDTO = productService.createProduct(
+        val product = Product(
             "product name",
             10000,
             LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
             LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
         )
 
-        assert(productDTO.toEntity() == product)
+        whenever(productRepository.save(product)).thenReturn(product)
+
+        val productDTO: ResponseProductDTO = productService.createProduct(
+            CreateProductDTO(
+                "product name",
+                10000,
+                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+            )
+        )
+
+        assert(productDTO == ResponseProductDTO(product))
     }
 
     @Test
     fun `we should get InvalidProductTitleException while creating product with invalid title`() {
         Assertions.assertThrows(InvalidProductTitleException::class.java) {
             productService.createProduct(
-                "",
-                10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
-                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+                CreateProductDTO(
+                    "",
+                    10000,
+                    LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+                    LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+                )
             )
         }
     }
@@ -104,10 +108,12 @@ class ProductServiceTests {
     fun `we should get InvalidTotalInvestingAmountException while creating product with invalid total amount`() {
         Assertions.assertThrows(InvalidTotalInvestingAmountException::class.java) {
             productService.createProduct(
-                "product name",
-                -10000,
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
-                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+                CreateProductDTO(
+                    "product name",
+                    -10000,
+                    LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+                    LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+                )
             )
         }
     }
@@ -116,10 +122,12 @@ class ProductServiceTests {
     fun `we should get InvalidInvestingPeriodException while creating product with invalid investing period`() {
         Assertions.assertThrows(InvalidInvestingPeriodException::class.java) {
             productService.createProduct(
-                "product name",
-                10000,
-                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11),
-                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+                CreateProductDTO(
+                    "product name",
+                    10000,
+                    LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11),
+                    LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11)
+                )
             )
         }
     }
