@@ -45,34 +45,6 @@ class InvestmentControllerTests {
     }
 
     @Test
-    fun `we should get products`() {
-        val data: List<ProductDTO> = listOf(
-            ProductDTO(
-                1, "product 1", 400000, 10000, 1,
-                LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
-            ),
-            ProductDTO(
-                5, "product 5", 500000, 20000, 1,
-                LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11), false
-            )
-        )
-
-        /* TODO
-        whenever(investmentService.getProducts()).thenReturn(data)
-
-        val resultActions: ResultActions = getProducts()
-        resultActions.andExpect(status().isOk)
-
-        val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
-
-        assert(products == data)
-         */
-    }
-
-    @Test
     @WithMockUser(username = "1")
     fun `we should get investments of user by user id`() {
         val data: List<InvestmentDTO> = listOf(
@@ -119,19 +91,6 @@ class InvestmentControllerTests {
         val investment: InvestmentDTO = objectMapper.readValue(content)
 
         assert(investment == data)
-    }
-
-    @Test
-    fun `we should handle SQLException while getting products with database problem`() {
-        /* TODO
-        whenever(investmentService.getProducts())
-            .thenAnswer { throw SQLException("error message") }
-
-        getProducts()
-            .andExpect(status().isInternalServerError)
-            .andExpect(jsonPath("$").isNotEmpty)
-            .andExpect(jsonPath("$.message").value("error message"))
-         */
     }
 
     @Test
@@ -279,9 +238,5 @@ class InvestmentControllerTests {
 
     private fun getInvestments(userId: Int): ResultActions {
         return mvc.perform(get("/investments").header("X-USER-ID", userId))
-    }
-
-    private fun getProducts(): ResultActions {
-        return mvc.perform(get("/products"))
     }
 }
