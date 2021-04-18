@@ -4,7 +4,6 @@ import hey.jusang.invest.exceptions.BaseException
 import hey.jusang.invest.exceptions.ErrorMessage
 import hey.jusang.invest.exceptions.ForbiddenRequestException
 import hey.jusang.invest.models.InvestmentDTO
-import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.InvestmentService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -15,11 +14,6 @@ import java.sql.SQLException
 
 @RestController
 class InvestmentController(val investmentService: InvestmentService) {
-    @GetMapping("/products")
-    fun getProducts(): ResponseEntity<List<ProductDTO>> {
-        return ResponseEntity(investmentService.getProducts(), HttpStatus.OK)
-    }
-
     @GetMapping("/investments")
     fun getInvestments(
         authentication: Authentication,

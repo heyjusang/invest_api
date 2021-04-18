@@ -23,4 +23,16 @@ data class ProductDTO(
         finishedAt = product.finishedAt
         soldOut = totalInvestingAmount == currentInvestingAmount
     }
+
+    fun toEntity(): Product {
+        return Product(
+            id,
+            title,
+            totalInvestingAmount,
+            currentInvestingAmount,
+            totalInvestingAmount,
+            startedAt,
+            finishedAt
+        )
+    }
 }

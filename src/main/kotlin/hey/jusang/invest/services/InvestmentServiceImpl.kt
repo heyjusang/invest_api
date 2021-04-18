@@ -4,7 +4,6 @@ import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.entities.Investment
 import hey.jusang.invest.entities.Product
 import hey.jusang.invest.models.InvestmentDTO
-import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.repositories.InvestmentRepository
 import hey.jusang.invest.repositories.ProductRepository
 import org.springframework.stereotype.Component
@@ -17,14 +16,7 @@ class InvestmentServiceImpl(
     val investmentRepository: InvestmentRepository,
     val productRepository: ProductRepository,
     val clock: Clock
-) :
-    InvestmentService {
-    override fun getProducts(): List<ProductDTO> {
-        val current = LocalDateTime.now(clock)
-        return productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
-            .map { ProductDTO(it) }
-    }
-
+) : InvestmentService {
     override fun getInvestments(userId: Long): List<InvestmentDTO> {
         return investmentRepository.findAllByUserId(userId)
             .map { InvestmentDTO(it) }
