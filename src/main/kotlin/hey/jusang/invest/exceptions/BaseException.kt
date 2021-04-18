@@ -28,3 +28,12 @@ class WrongPasswordException :
 
 class ForbiddenRequestException :
     BaseException(ErrorCode.FORBIDDEN_REQUEST, HttpStatus.FORBIDDEN, "Forbidden request")
+
+class InvalidProductTitleException :
+    BaseException(ErrorCode.INVALID_PRODUCT_TITLE, HttpStatus.BAD_REQUEST, "Product's title is invalid")
+
+class InvalidTotalInvestingAmountException :
+    BaseException(ErrorCode.INVALID_TOTAL_INVESTING_AMOUNT, HttpStatus.BAD_REQUEST, "Total investing amount is invalid")
+
+class InvalidInvestingPeriodException :
+    BaseException(ErrorCode.INVALID_INVESTING_PERIOD, HttpStatus.BAD_REQUEST, "Investing period is invalid")

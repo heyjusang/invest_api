@@ -1,6 +1,9 @@
 package hey.jusang.invest.services
 
 import hey.jusang.invest.entities.Product
+import hey.jusang.invest.exceptions.InvalidInvestingPeriodException
+import hey.jusang.invest.exceptions.InvalidProductTitleException
+import hey.jusang.invest.exceptions.InvalidTotalInvestingAmountException
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.repositories.ProductRepository
 import org.springframework.stereotype.Component
@@ -18,7 +21,12 @@ class ProductServiceImpl(val productRepository: ProductRepository, val clock: Cl
     override fun createProduct(
         title: String, totalInvestingAmount: Int, startedAt: LocalDateTime, finishedAt: LocalDateTime
     ): ProductDTO {
-        // TODO: validation
+        if (title.isBlank()) throw InvalidProductTitleException()
+
+        if (totalInvestingAmount <= 0) throw InvalidTotalInvestingAmountException()
+
+        if (startedAt >= finishedAt) throw InvalidInvestingPeriodException()
+
         val productDTO = ProductDTO().apply {
             this.title = title
             this.totalInvestingAmount = totalInvestingAmount
