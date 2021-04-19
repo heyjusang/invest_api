@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.time.Month
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -88,6 +89,49 @@ class InvestApplicationTests {
         }
 
         assert(soldOut == 1)
+    }
+
+    @Test
+    fun `we should create product`() {
+        val resultActions: ResultActions = createProduct(1, "product name", 10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val product: ResponseProductDTO = objectMapper.readValue(content)
+
+        assert(product.title == "product name")
+    }
+
+    @Test
+    fun `we cannot create product with empty title`() {
+        createProduct(1, "", 10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_PRODUCT_TITLE))
+    }
+
+    @Test
+    fun `we cannot create product with invalid total investing amount`() {
+        createProduct(1, "product name", -10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_TOTAL_INVESTING_AMOUNT))
+    }
+
+    @Test
+    fun `we cannot create product with invalid investing period`() {
+        createProduct(1, "product name", 10000,
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INVESTING_PERIOD))
     }
 
     @Test
@@ -436,6 +480,8 @@ class InvestApplicationTests {
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
     }
 
+    // TODO: test create product and investment with invalid userid or invalid authentication
+
     private fun signUp(name: String, password: String): ResultActions {
         return mvc.perform(
             post("/signup")
@@ -449,6 +495,26 @@ class InvestApplicationTests {
             post("/signin")
                 .param("name", name)
                 .param("password", password)
+        )
+    }
+
+    private fun createProduct(
+        userId: Long,
+        title: String?,
+        totalInvestingAmount: Int,
+        startedAt: LocalDateTime,
+        finishedAt: LocalDateTime
+    ): ResultActions {
+        val user = InvestorDTO(userId, "test", "password", "USER")
+
+        return mvc.perform(
+            post("/product")
+                .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
+                .header("X-USER-ID", userId)
+                .param("title", title)
+                .param("totalInvestingAmount", totalInvestingAmount.toString())
+                .param("startedAt", startedAt.toString())
+                .param("finishedAt", finishedAt.toString())
         )
     }
 
