@@ -17,17 +17,18 @@ class InvestmentServiceImpl(
     val productRepository: ProductRepository,
     val clock: Clock
 ) : InvestmentService {
-    override fun getInvestments(userId: Long): List<InvestmentDTO> {
+    override fun getInvestments(userId: Long): List<InvestmentDTO.Response> {
         return investmentRepository.findAllByUserId(userId)
-            .map { InvestmentDTO(it) }
+            .map { InvestmentDTO.Response(it) }
     }
 
     @Transactional
-    override fun createInvestment(userId: Long, productId: Long, amount: Int): InvestmentDTO {
-        if (amount <= 0) throw InvalidAmountException()
+    override fun createInvestment(userId: Long, investmentDTO: InvestmentDTO.Request): InvestmentDTO.Response {
+        if (investmentDTO.amount <= 0) throw InvalidAmountException()
 
         val current: LocalDateTime = LocalDateTime.now(clock)
-        val product: Product = productRepository.findByIdForUpdate(productId).orElseThrow { ProductNotFoundException() }
+        val product: Product =
+            productRepository.findByIdForUpdate(investmentDTO.productId).orElseThrow { ProductNotFoundException() }
 
         if (product.startedAt > current) {
             throw ProductNotOpenedException()
@@ -37,23 +38,20 @@ class InvestmentServiceImpl(
             throw ProductClosedException()
         }
 
-        if (product.totalInvestingAmount < product.currentInvestingAmount + amount) {
+        if (product.totalInvestingAmount < product.currentInvestingAmount + investmentDTO.amount) {
             throw TotalInvestingAmountExceededException()
         }
 
-        val investmentDTO = InvestmentDTO()
         investmentDTO.userId = userId
-        investmentDTO.productId = productId
-        investmentDTO.amount = amount
 
         val investment: Investment = investmentDTO.toEntity()
+        val result: Investment = investmentRepository.save(investment)
 
-        investmentRepository.save(investment)
-
-        product.currentInvestingAmount += amount
+        // TODO : can save using product entity of investment entity ???
+        product.currentInvestingAmount += investmentDTO.amount
         product.investorCount += 1
         productRepository.save(product)
 
-        return investmentDTO
+        return InvestmentDTO.Response(result)
     }
 }

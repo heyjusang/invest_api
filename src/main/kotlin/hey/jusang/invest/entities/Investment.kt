@@ -9,18 +9,18 @@ import javax.validation.constraints.NotNull
 @Entity
 @EntityListeners(AuditingEntityListener::class)
 class Investment(
+    @NotNull
+    var userId: Long,
+    @NotNull
+    var productId: Long,
+    var amount: Int
+) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    @NotNull
-    var userId: Long = 0,
-    @NotNull
-    var productId: Long = 0,
-    var amount: Int = 0,
+    val id: Long? = null
     @ManyToOne
     @JoinColumn(name = "productId", insertable = false, updatable = false)
     var product: Product? = null
-) {
     @CreatedDate
     var createdAt: LocalDateTime? = null
 

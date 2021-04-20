@@ -47,16 +47,16 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should get investments of user by user id`() {
-        val data: List<InvestmentDTO> = listOf(
-            InvestmentDTO(
-                4, 1, 1, 10000,
+        val data: List<InvestmentDTO.Response> = listOf(
+            InvestmentDTO.Response(
+                4,1, 1, 10000,
                 ProductDTO.Response(
                     1, "product 1", 2000000, 10000, 1,
                     LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
                     LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11), false
                 )
             ),
-            InvestmentDTO(
+            InvestmentDTO.Response(
                 15, 1, 33, 45000,
                 ProductDTO.Response(
                     33, "product 33", 3000000, 45000, 1,
@@ -72,7 +72,7 @@ class InvestmentControllerTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content)
 
         assert(investments == data)
     }
@@ -80,15 +80,15 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should create investment`() {
-        val data = InvestmentDTO(1, 1, 1, 10000)
-        whenever(investmentService.createInvestment(1, 1, 10000))
+        val data = InvestmentDTO.Response(1, 1, 1, 10000)
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 10000)))
             .thenReturn(data)
 
         val resultActions: ResultActions = createInvestment(1, 1, 10000)
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investment: InvestmentDTO = objectMapper.readValue(content)
+        val investment: InvestmentDTO.Response = objectMapper.readValue(content)
 
         assert(investment == data)
     }
@@ -108,7 +108,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle SQLException while creating investment with database problem`() {
-        whenever(investmentService.createInvestment(1, 1, 10000))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 10000)))
             .thenAnswer { throw SQLException("error message") }
 
         createInvestment(1, 1, 10000)
@@ -120,7 +120,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle InvalidAmountException while creating investment with invalid amount`() {
-        whenever(investmentService.createInvestment(1, 1, -1))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, -1)))
             .thenAnswer { throw InvalidAmountException() }
 
         createInvestment(1, 1, -1)
@@ -132,7 +132,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle ProductNotFoundException while creating investment with invalid product id`() {
-        whenever(investmentService.createInvestment(1, 1, 100))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 100)))
             .thenAnswer { throw ProductNotFoundException() }
 
         createInvestment(1, 1, 100)
@@ -144,7 +144,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle ProductNotOpenedException while creating investment with not opened product`() {
-        whenever(investmentService.createInvestment(1, 1, 100))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 100)))
             .thenAnswer { throw ProductNotOpenedException() }
 
         createInvestment(1, 1, 100)
@@ -156,7 +156,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle ProductClosedException while creating investment with closed product`() {
-        whenever(investmentService.createInvestment(1, 1, 100))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 100)))
             .thenAnswer { throw ProductClosedException() }
 
         createInvestment(1, 1, 100)
@@ -168,7 +168,7 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "1")
     fun `we should handle TotalInvestingAmountExceededException while creating investment with exceeded amount`() {
-        whenever(investmentService.createInvestment(1, 1, 100))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 100)))
             .thenAnswer { throw TotalInvestingAmountExceededException() }
 
         createInvestment(1, 1, 100)
@@ -180,8 +180,8 @@ class InvestmentControllerTests {
     @Test
     @WithAnonymousUser
     fun `we cannot create investment without authentication`() {
-        whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 10000)))
+            .thenReturn(InvestmentDTO.Response(1, 1, 1, 10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isForbidden)
@@ -190,8 +190,8 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "2")
     fun `we cannot create investment of others`() {
-        whenever(investmentService.createInvestment(1, 1, 10000))
-            .thenReturn(InvestmentDTO(1, 1, 1, 10000))
+        whenever(investmentService.createInvestment(1, InvestmentDTO.Request(1, 10000)))
+            .thenReturn(InvestmentDTO.Response(1, 1, 1, 10000))
 
         createInvestment(1, 1, 10000)
             .andExpect(status().isForbidden)
@@ -202,8 +202,8 @@ class InvestmentControllerTests {
     @Test
     @WithAnonymousUser
     fun `we cannot get investments without authentication`() {
-        val data: List<InvestmentDTO> = listOf(
-            InvestmentDTO(4, 1, 1, 10000)
+        val data: List<InvestmentDTO.Response> = listOf(
+            InvestmentDTO.Response(4, 1, 1, 10000)
         )
 
         whenever(investmentService.getInvestments(1)).thenReturn(data)
@@ -215,8 +215,8 @@ class InvestmentControllerTests {
     @Test
     @WithMockUser(username = "2")
     fun `we cannot get investments of others`() {
-        val data: List<InvestmentDTO> = listOf(
-            InvestmentDTO(4, 1, 1, 10000)
+        val data: List<InvestmentDTO.Response> = listOf(
+            InvestmentDTO.Response(4, 1, 1, 10000)
         )
 
         whenever(investmentService.getInvestments(1)).thenReturn(data)
@@ -231,7 +231,7 @@ class InvestmentControllerTests {
         return mvc.perform(
             post("/investment")
                 .header("X-USER-ID", userId)
-                .param("product_id", productId.toString())
+                .param("productId", productId.toString())
                 .param("amount", amount.toString())
         )
     }

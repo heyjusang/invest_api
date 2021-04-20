@@ -18,7 +18,7 @@ class InvestmentController(val investmentService: InvestmentService) {
     fun getInvestments(
         authentication: Authentication,
         @RequestHeader("X-USER-ID") userId: Long
-    ): ResponseEntity<List<InvestmentDTO>> {
+    ): ResponseEntity<List<InvestmentDTO.Response>> {
         checkAuthId(authentication, userId)
 
         return ResponseEntity(investmentService.getInvestments(userId), HttpStatus.OK)
@@ -28,12 +28,11 @@ class InvestmentController(val investmentService: InvestmentService) {
     fun createInvestment(
         authentication: Authentication,
         @RequestHeader("X-USER-ID") userId: Long,
-        @RequestParam("product_id") productId: Long,
-        @RequestParam("amount") amount: Int
-    ): ResponseEntity<InvestmentDTO> {
+        @ModelAttribute investment: InvestmentDTO.Request
+    ): ResponseEntity<InvestmentDTO.Response> {
         checkAuthId(authentication, userId)
 
-        return ResponseEntity(investmentService.createInvestment(userId, productId, amount), HttpStatus.CREATED)
+        return ResponseEntity(investmentService.createInvestment(userId, investment), HttpStatus.CREATED)
     }
 
     @ExceptionHandler(SQLException::class)

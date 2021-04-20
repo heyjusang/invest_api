@@ -140,7 +140,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content)
 
         assert(investments.size == 2)
 
@@ -156,7 +156,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investment: InvestmentDTO = objectMapper.readValue(content)
+        val investment: InvestmentDTO.Response = objectMapper.readValue(content)
 
         assert(investment.userId == newInvestorId)
         assert(investment.productId == normalProductId)
@@ -166,7 +166,7 @@ class InvestApplicationTests {
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
-        val investments: List<InvestmentDTO> = objectMapper.readValue(content2)
+        val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content2)
 
         assert(investments.size == 1)
         assert(investments[0].amount == 10000)
@@ -180,7 +180,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investment: InvestmentDTO = objectMapper.readValue(content)
+        val investment: InvestmentDTO.Response = objectMapper.readValue(content)
 
         assert(investment.userId == newInvestorId)
         assert(investment.productId == lastChanceProductId)
@@ -310,7 +310,7 @@ class InvestApplicationTests {
                 }
 
                 val content: String = resultActions.andReturn().response.contentAsString
-                val investments: List<InvestmentDTO> = objectMapper.readValue(content)
+                val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content)
 
                 for (investment in investments) {
                     if (investment.amount <= 0 || investment.userId != i) {
@@ -525,7 +525,7 @@ class InvestApplicationTests {
             post("/investment")
                 .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
                 .header("X-USER-ID", userId)
-                .param("product_id", productId.toString())
+                .param("productId", productId.toString())
                 .param("amount", amount.toString())
         )
     }

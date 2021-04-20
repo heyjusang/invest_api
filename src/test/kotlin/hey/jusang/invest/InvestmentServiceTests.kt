@@ -55,24 +55,20 @@ class InvestmentServiceTests {
     @Test
     fun `we should get investments of user by user id`() {
         val data: List<Investment> = listOf(
-            Investment(
-                4, 1, 1, 10000
-            ),
-            Investment(
-                15, 1, 33, 45000
-            )
+            Investment(1, 1, 10000),
+            Investment(1, 33, 45000)
         )
 
         whenever(investmentRepository.findAllByUserId(1)).thenReturn(data)
 
-        val investments: List<InvestmentDTO> = investmentService.getInvestments(1)
+        val investments: List<InvestmentDTO.Response> = investmentService.getInvestments(1)
 
-        assert(investments == data.map { InvestmentDTO(it) })
+        assert(investments == data.map { InvestmentDTO.Response(it) })
     }
 
     @Test
     fun `we should create investment`() {
-        val investment = Investment(null, 1, 5, 10)
+        val investment = Investment(1, 5, 10)
         val product = Product(
             "product 5", 500000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
@@ -90,14 +86,14 @@ class InvestmentServiceTests {
         whenever(productRepository.save(product))
             .thenReturn(product)
 
-        val investmentDTO: InvestmentDTO = investmentService.createInvestment(1, 5, 10)
-        assert(investmentDTO.toEntity() == investment)
+        val investmentDTO: InvestmentDTO.Response = investmentService.createInvestment(1, InvestmentDTO.Request(5, 10))
+        assert(investmentDTO == InvestmentDTO.Response(investment))
     }
 
     @Test
     fun `we should get InvalidAmountException while creating investment with invalid amount`() {
         Assertions.assertThrows(InvalidAmountException::class.java) {
-            investmentService.createInvestment(1, 5, -100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, -100))
         }
     }
 
@@ -107,7 +103,7 @@ class InvestmentServiceTests {
             .thenReturn(Optional.ofNullable(null))
 
         Assertions.assertThrows(ProductNotFoundException::class.java) {
-            investmentService.createInvestment(1, 9999, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(9999, 100))
         }
     }
 
@@ -125,7 +121,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(ProductNotOpenedException::class.java) {
-            investmentService.createInvestment(1, 5, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 100))
         }
     }
 
@@ -143,7 +139,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(ProductClosedException::class.java) {
-            investmentService.createInvestment(1, 5, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 100))
         }
     }
 
@@ -161,7 +157,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(TotalInvestingAmountExceededException::class.java) {
-            investmentService.createInvestment(1, 5, 1000000)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 1000000))
         }
     }
 }
