@@ -28,11 +28,11 @@ class JwtTokenProvider {
         key = Keys.hmacShaKeyFor(secret.toByteArray())
     }
 
-    fun createToken(investor: InvestorDTO): String {
+    fun createToken(investor: InvestorDTO.Data): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(investor.id.toString())
         claims["name"] = investor.id.toString()
-        claims["password"] = investor.password
+        claims["password"] = investor.encryptedPassword
         claims["role"] = investor.role
 
         return Jwts.builder()

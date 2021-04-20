@@ -427,7 +427,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -444,7 +444,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -469,7 +469,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -505,7 +505,7 @@ class InvestApplicationTests {
         startedAt: LocalDateTime,
         finishedAt: LocalDateTime
     ): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
 
         return mvc.perform(
             post("/product")
@@ -519,7 +519,7 @@ class InvestApplicationTests {
     }
 
     private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
 
         return mvc.perform(
             post("/investment")
@@ -531,7 +531,7 @@ class InvestApplicationTests {
     }
 
     private fun getInvestments(userId: Long): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
 
         return mvc.perform(
             get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)

@@ -41,7 +41,7 @@ class SignControllerTests {
 
     @Test
     fun `we should sign in`() {
-        whenever(signService.signIn("username", "password"))
+        whenever(signService.signIn(InvestorDTO.Request("username", "password")))
             .thenReturn("TEST TOKEN")
 
         signIn("username", "password")
@@ -52,22 +52,22 @@ class SignControllerTests {
 
     @Test
     fun `we should sign up`() {
-        val data = InvestorDTO(1, "username", "password")
-        whenever(signService.signUp("username", "password"))
+        val data = InvestorDTO.Response(1, "username", "password")
+        whenever(signService.signUp(InvestorDTO.Request("username", "password")))
             .thenReturn(data)
 
         val resultActions = signUp("username", "password")
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investor: InvestorDTO = objectMapper.readValue(content)
+        val investor: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(investor == data)
     }
 
     @Test
     fun `we should handle UserNotFoundException while signing in with wrong name`() {
-        whenever(signService.signIn("wrong name", "password"))
+        whenever(signService.signIn(InvestorDTO.Request("wrong name", "password")))
             .thenAnswer { throw UserNotFoundException() }
 
         signIn("wrong name", "password")
@@ -78,7 +78,7 @@ class SignControllerTests {
 
     @Test
     fun `we should handle WrongPasswordException while signing in with wrong password`() {
-        whenever(signService.signIn("username", "wrong password"))
+        whenever(signService.signIn(InvestorDTO.Request("username", "wrong password")))
             .thenAnswer { throw WrongPasswordException() }
 
         signIn("username", "wrong password")
@@ -89,7 +89,7 @@ class SignControllerTests {
 
     @Test
     fun `we should handle UserAlreadyExistedException while signing up with existed name`() {
-        whenever(signService.signUp("existed", "password"))
+        whenever(signService.signUp(InvestorDTO.Request("existed", "password")))
             .thenAnswer { throw UserAlreadyExistedException() }
 
         signUp("existed", "password")

@@ -38,7 +38,7 @@ class InvestorRepositoryTests {
 
     @Test
     fun `we should create investor`() {
-        val investor = Investor(null, "heyhey", "jusang", "USER")
+        val investor = Investor("heyhey", "jusang", "USER")
 
         val updated: Investor = testRepository.save(investor)
 

@@ -8,13 +8,13 @@ import javax.persistence.*
 @Entity
 @EntityListeners(AuditingEntityListener::class)
 class Investor(
+    var name: String,
+    var password: String,
+    var role: String
+) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    var name: String? = null,
-    var password: String? = null,
-    var role: String? = null
-) {
+    var id: Long? = null
     @CreatedDate
     var createdAt: LocalDateTime? = null
 

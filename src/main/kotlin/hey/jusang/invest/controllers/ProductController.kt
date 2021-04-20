@@ -24,7 +24,7 @@ class ProductController(val productService: ProductService) {
     fun createProduct(
         authentication: Authentication,
         @RequestHeader("X-USER-ID") userId: Long,
-        @ModelAttribute("product") product: CreateProductDTO
+        @ModelAttribute product: CreateProductDTO
     ): ResponseEntity<ResponseProductDTO> {
         checkAuthId(authentication, userId)
 
