@@ -7,14 +7,14 @@ data class InvestmentDTO(
     var userId: Long = 0L,
     var productId: Long = 0L,
     var amount: Int = 0,
-    var productDTO: ResponseProductDTO? = null
+    var productDTO: ProductDTO.Response? = null
 ) {
     constructor(investment: Investment) : this() {
         id = investment.id
         userId = investment.userId
         productId = investment.productId
         amount = investment.amount
-        productDTO = investment.product?.let { ResponseProductDTO(it) }
+        productDTO = investment.product?.let { ProductDTO.Response(it) }
     }
 
     fun toEntity(): Investment {

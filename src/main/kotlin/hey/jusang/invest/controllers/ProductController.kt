@@ -3,8 +3,7 @@ package hey.jusang.invest.controllers
 import hey.jusang.invest.exceptions.BaseException
 import hey.jusang.invest.exceptions.ErrorMessage
 import hey.jusang.invest.exceptions.ForbiddenRequestException
-import hey.jusang.invest.models.CreateProductDTO
-import hey.jusang.invest.models.ResponseProductDTO
+import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.ProductService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,7 +15,7 @@ import java.sql.SQLException
 @RestController
 class ProductController(val productService: ProductService) {
     @GetMapping("/products")
-    fun getProducts(): ResponseEntity<List<ResponseProductDTO>> {
+    fun getProducts(): ResponseEntity<List<ProductDTO.Response>> {
         return ResponseEntity(productService.getProducts(), HttpStatus.OK)
     }
 
@@ -24,8 +23,8 @@ class ProductController(val productService: ProductService) {
     fun createProduct(
         authentication: Authentication,
         @RequestHeader("X-USER-ID") userId: Long,
-        @ModelAttribute product: CreateProductDTO
-    ): ResponseEntity<ResponseProductDTO> {
+        @ModelAttribute product: ProductDTO.Request
+    ): ResponseEntity<ProductDTO.Response> {
         checkAuthId(authentication, userId)
 
         return ResponseEntity(

@@ -1,9 +1,8 @@
 package hey.jusang.invest.services
 
-import hey.jusang.invest.models.CreateProductDTO
-import hey.jusang.invest.models.ResponseProductDTO
+import hey.jusang.invest.models.ProductDTO
 
 interface ProductService {
-    fun getProducts(): List<ResponseProductDTO>
-    fun createProduct(productDTO: CreateProductDTO): ResponseProductDTO
+    fun getProducts(): List<ProductDTO.Response>
+    fun createProduct(productDTO: ProductDTO.Request): ProductDTO.Response
 }
