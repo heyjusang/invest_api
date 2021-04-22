@@ -25,6 +25,12 @@
   ``` json
   [{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}, ...]
   ```
+* 투자 상품 만들기 
+  *  [POST] /product (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {title: String, totalInvestmentAmount: Int, startedAt: DateTime, finishedAt: DateTime})
+  * 리턴
+  ``` json
+  {"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":0,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}
+  ```
 * 유저의 투자 내역 조회
   * [GET] /investments (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String})
   * 리턴
@@ -32,10 +38,22 @@
   [{"id":1,"userId":10,"productId":3,"amount":1000000,"productDTO":{"id":3,"title":"Sold out product","totalInvestingAmount":2000000,"currentInvestingAmount":2000000,"investorCount":2,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":true}}, ...]
   ```
 * 투자 하기
-  * [POST] /investment (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {product_id: Int, amount: Int})
+  * [POST] /investment (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {productId: Int, amount: Int})
   * 리턴
   ``` json
-  {"id":null,"userId":99,"productId":1,"amount":10000,"productDTO":null}
+  {"id":1,"userId":99,"productId":1,"amount":10000,"productDTO":{"id":1,"title":"product name","totalInvestingAmount":2000000,"currentInvestingAmount":10000,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}}
+  ```
+* 가입 하기
+  * [POST] /signup (Param: {name: String, password: String})
+  * 리턴
+  ``` json
+  {"id":1,"name":"username","role":"USER"}
+  ```
+* 로그인 하기 
+  * [POST] /signin (Param: {name: String, password: String})
+  * 리턴
+  ``` json
+  {"id":1,"name":"username","role":"USER"}
   ```
 * 에러 발생 및 처리 실패 시
   * 리턴
@@ -121,34 +139,51 @@
 
 ### models/
 * ProductDTO
-  * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, soldOut
+  * Request
+    * title, totalInvestingAmount, startedAt, finishedAt
+  * Response
+    * id, title, totalInvestingAmount, currentInvestingAmount, investorCount, startedAt, finishedAt, soldOut
 * InvestmentDTO
-  * id, userId, productId, amount, productDTO, createdAt
+  * Request
+    * productId, amount, (userId)
+  * Response
+    * id, userId, productId, amount, productDTO
 * InvestorDTO
-  * id, name, password, role
+  * Request
+    * name, password, (encryptedPassword, role) 
+  * Response
+    * id, name, role
+  * Data
+    * id, name, encryptedPassword, role
 ### controllers/
-* InvestmentController
+* ProductController
   * getProducts()
     * [GET] /products
     * 상품 모집 기간 내의 전체 투자 상품 조회
     * Product 리스트 리턴
-  * getInvestments()
-    * [GET] /investments (Header: {X-USER-ID: Int})
-    * X-USER-ID에 해당하는 유저가 투자한 모든 투자 내역 반환
-    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
-    * Investment 리스트 리턴
-  * createInvestment()
-    * [POST] /investment (Header: {X-USER-ID: Int}, Param: {product_id: Int, amount: Int})
-    * X-USER-ID에 해당하는 유저가 product_id에 해당하는 상품에 amount만큼의 금액을 투자
-    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
-    * 성공 시, investment 리턴
-    * 실패 시, 실패 원인에 따라 {erroCode: Int, message: String} 형태로 리턴
+  * createProduct()
+    * [POST] /product (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {title: String, totalInvestmentAmount: Int, startedAt: DateTime, finishedAt: DateTime})
+    * 투자 상품 만들기
+    * Product 리턴
   * sqlException() (ExceptionHandler)
     * DB 에러를 핸들링
     * 에러 발생 시 {errorCode: Int, message: String} 형태로 리턴 (Http Status Code: 500)
   * baseException() (ExceptionHandler)
     * service layer 로직상에서 발생한 에러 핸들링
     * 에러 발생 시 {errorCode: Int, message: String) 형태로 리턴 (Http Status Code: 400 or 404)
+* InvestmentController
+  * getInvestments()
+    * [GET] /investments (Header: {X-USER-ID: Int})
+    * X-USER-ID에 해당하는 유저가 투자한 모든 투자 내역 반환
+    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
+    * Investment 리스트 리턴
+  * createInvestment()
+    * [POST] /investment (Header: {X-USER-ID: Int}, Param: {productId: Int, amount: Int})
+    * X-USER-ID에 해당하는 유저가 product_id에 해당하는 상품에 amount만큼의 금액을 투자
+    * Authentication 정보의 user id와 X-USER-ID가 일치해야함
+    * 성공 시, investment 리턴
+  * sqlException() (ExceptionHandler)
+  * baseException() (ExceptionHandler)
 * SignController
   * signIn()
     * [POST] /signin (Param: {name: String, password: String})
@@ -162,10 +197,17 @@
   * baseException() (ExceptionHandler)
     
 ### services/
-* InvestmentService
-* InvestmentServiceImpl
+* ProductService
+* ProductServiceImpl
   * getProducts()
     * 전체 투자 상품 조회 처리 로직
+  * createProduct()
+    * 투자 상품 만들기 처리 로직
+    * 상품 제목 없이 만들면 -> InvalidProductTitleException
+    * 투자 금액 0 이하면 -> InvalidTotalInvestingAmountException
+    * 종료일이 시작일보다 빠르면 -> InvalidInvestingPeriodException
+* InvestmentService
+* InvestmentServiceImpl
   * getInvestments()
     * 유저의 투자 내역 조회 처리 로직
   * createInvestment()
@@ -216,6 +258,8 @@
 ### configs/
 * SecurityConfiguration
   * UsernamePasswordAutenticationFilter 수행 전 JwtAutenticationFilter 사용
+* DateTimeFormatConfiguration
+  * Request param으로 DateTime 넘어올 때 ISO format으로 parsing되도록 처리
 
 ## 동시성 문제
 ### 동시에 여러 유저가 동일한 상품에 투자하고자 할 때, 어떻게 처리할 것인가?
@@ -257,7 +301,7 @@
 * 에러 발생 시 BaseException 리턴
 
 ## Test
-* 총 73개 테스트
+* 총 92개 테스트
 
 ### ProductRepositoryTests
 * 6개 테스트
@@ -271,6 +315,10 @@
 |we cannot get product without proper ID| seleectProductForUpdate() 실패 테스트 - 없는 상품|
 |we should update product with an ID of 1| updateProduct() 테스트|
 |we cannot update product over total investing amount| updateProduct() 실패 테스트 - 금액 초과|
+|we should create product| |
+|we cannot create product with negative total investing amount||
+|we cannot create product with wrong range date||
+
 
 ### InvestmentRepositoryTests
 * 6개 테스트
@@ -295,14 +343,24 @@
 |we should get 1 when requesting count of investor whose name is hey| selectUserCountByName() 테스트|
 |we should create investor| insertUser() 테스트|
 
-### InvestmentServiceTests
-* 9개 테스트
+### ProductServiceTests
+* 6개 테스트
 * Service Layer 기능 검사를 위한 단위 테스트
-
 | 테스트 이름| 테스트 내용|
 |---|---|
 |mock should be configured| 환경 테스트|
 |we should get products| getProducts() 테스트|
+|we should create product| createProduct() 테스트|
+|we should get InvalidProductTitleException while creating product with invalid title| createProduct() 실패 처리 테스트 - 빈 타이틀|
+|we should get InvalidTotalInvestingAmountException while creating product with invalid total amount| createProduct() 실패 처리 테스트 - 0 이하의 금액|
+|we should get InvalidInvestingPeriodException while creating product with invalid investing period| createProduct() 실패 처리 테스트 - 이상한 기간|
+
+### InvestmentServiceTests
+* 8개 테스트
+
+| 테스트 이름| 테스트 내용|
+|---|---|
+|mock should be configured| 환경 테스트|
 |we should get investments of user by user id| getInvestments() 테스트|
 |we should create investment| createInvestment() 테스트|
 |we should get InvalidAmountException while creating investment with invalid amount| createInvestment() 실패 처리 테스트 - 0 이하의 금액|
@@ -323,17 +381,30 @@
 |we should get WrongPasswordException when signing in with wrong password signIn() 실패 테스트 - 비밀번호 오류|
 |we should get UserAlreadyExistedException when sign up with existed name| signUp() 실패 테스트 - 이미 있는 유저 이름|
 
-### InvestmentControllerTests
-* 16개 테스트
+### ProductControllerTests
+* 9개 테스트
 * Controller Layer 기능 검사를 위한 단위 테스트
 
 | 테스트 이름| 테스트 내용|
 |---|---|
 |mock mvc should be configured|환경 테스트|
-|we should get products|[GET]/products 테스트|
+|we should get products|[GET] /products 테스트|
+|we should handle SQLException while getting products with database problem| [GET] /products 중 DB 에러 리턴 테스트|
+|we should create product| [POST] /product 테스트|
+|we cannot create product without authentication| 인증 없이 [POST] /product 수행 불가|
+|we should handle SQLException while creating product with database problem| [POST] /product 중 DB 에러 리턴 테스트|
+|we should handle InvalidProductTitleException while creating product with invalid title| [POST] /product 중 InvalidProductTitleException 에러 리턴 테스트|
+|we should handle InvalidTotalInvestingAmountException while creating product with invalid total amount| [POST] /product 중 InvalidTotalInvestingAmountException 에러 리턴 테스트|
+|we should handle InvalidInvestingPeriodException while creating product with invalid investing period| [POST] /product 중 InvalidInvestingPeriodException 에러 리턴 테스트|
+
+### InvestmentControllerTests
+* 14개 테스트
+
+| 테스트 이름| 테스트 내용|
+|---|---|
+|mock mvc should be configured|환경 테스트|
 |we should get investments of user by user id|[GET] /investments 테스트|
 |we should create investment|[POST] /investment 테스트|
-|we should handle SQLException while getting products with database problem| [GET] /products 중 DB 에러 리턴 테스트|
 |we should handle SQLException while getting investments with database problem| [GET] /investments 중 DB 에러 리턴 테스트|
 |we should handle SQLException while creating investment with database problem| [POST] /investment 중 DB 에러 리턴 테스트|
 |we should handle InvalidAmountException while creating investment with invalid amount| [POST] /investment 중 InvalidAmountException 에러 리턴 테스트 |
@@ -359,13 +430,17 @@
 |we should handle UserAlreadyExistedException while signing up with existed name| [POST] /signup 중 UserAlreadyExistedException 에러 리턴 테스트|
 
 ### InvestApplicationTests
-* 19개 테스트
+* 23개 테스트
 * 실제 Application 단위의 통합 테스트
 
 | 테스트 이름| 테스트 내용|
 |---|---|
 |application should be configured| 환경 테스트 |
 |we should get 23 products (including 1 sold out) when requesting a list of product within the period| 상품 조회 테스트|
+|we should create product| 상품 생성 테스트|
+|we cannot create product with empty title| 빈 제목 상품 생성 테스트|
+|we cannot create product with invalid total investing amount| 0 이하 상품 생성 테스트|
+|we cannot create product with invalid investing period| 잘못된 기간 상품 생성 테스트|
 |we should get 2 investments when requesting a list of investment for user with an ID of 10| 투자 내역 조회 테스트|
 |we should create investment and get 1 investment when requesting a list of investment| 투자 후 투자내역 생겼는지 테스트|
 |we should create investment and updated product should be returned when request a list of product| 투자 후 상품 업데이트 되었는지 테스트|
