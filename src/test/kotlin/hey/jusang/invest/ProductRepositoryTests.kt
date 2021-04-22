@@ -89,4 +89,45 @@ class ProductRepositoryTests {
             testRepository.saveAndFlush(product)
         }
     }
+
+    @Test
+    fun `we should create product`() {
+        val product = Product(
+            "product name",
+            10000,
+            LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+            LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+        )
+
+        testRepository.save(product)
+        // TODO: check success
+    }
+
+    @Test
+    fun `we cannot create product with negative total investing amount`() {
+        Assertions.assertThrows(DataIntegrityViolationException::class.java) {
+            val product = Product(
+                "product name",
+                -10000,
+                LocalDateTime.of(2021, Month.MARCH, 10, 11, 11, 11),
+                LocalDateTime.of(2022, Month.APRIL, 10, 11, 11, 11)
+            )
+
+            testRepository.save(product)
+        }
+    }
+
+    @Test
+    fun `we cannot create product with wrong range date`() {
+        Assertions.assertThrows(DataIntegrityViolationException::class.java) {
+            val product = Product(
+                "product name",
+                10000,
+                LocalDateTime.of(2022, Month.MARCH, 10, 11, 11, 11),
+                LocalDateTime.of(2021, Month.APRIL, 10, 11, 11, 11)
+            )
+
+            testRepository.save(product)
+        }
+    }
 }

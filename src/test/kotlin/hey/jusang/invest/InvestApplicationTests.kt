@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import java.time.Month
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -72,7 +73,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
 
         assert(products.size == 23)
 
@@ -91,12 +92,55 @@ class InvestApplicationTests {
     }
 
     @Test
+    fun `we should create product`() {
+        val resultActions: ResultActions = createProduct(1, "product name", 10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+        resultActions.andExpect(status().isCreated)
+
+        val content: String = resultActions.andReturn().response.contentAsString
+        val product: ProductDTO.Response = objectMapper.readValue(content)
+
+        assert(product.title == "product name")
+    }
+
+    @Test
+    fun `we cannot create product with empty title`() {
+        createProduct(1, "", 10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_PRODUCT_TITLE))
+    }
+
+    @Test
+    fun `we cannot create product with invalid total investing amount`() {
+        createProduct(1, "product name", -10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_TOTAL_INVESTING_AMOUNT))
+    }
+
+    @Test
+    fun `we cannot create product with invalid investing period`() {
+        createProduct(1, "product name", 10000,
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INVESTING_PERIOD))
+    }
+
+    @Test
     fun `we should get 2 investments when requesting a list of investment for user with an ID of 10`() {
         val resultActions: ResultActions = getInvestments(investorId)
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investments: List<InvestmentDTO> = objectMapper.readValue(content)
+        val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content)
 
         assert(investments.size == 2)
 
@@ -112,7 +156,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investment: InvestmentDTO = objectMapper.readValue(content)
+        val investment: InvestmentDTO.Response = objectMapper.readValue(content)
 
         assert(investment.userId == newInvestorId)
         assert(investment.productId == normalProductId)
@@ -122,7 +166,7 @@ class InvestApplicationTests {
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
-        val investments: List<InvestmentDTO> = objectMapper.readValue(content2)
+        val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content2)
 
         assert(investments.size == 1)
         assert(investments[0].amount == 10000)
@@ -136,7 +180,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val investment: InvestmentDTO = objectMapper.readValue(content)
+        val investment: InvestmentDTO.Response = objectMapper.readValue(content)
 
         assert(investment.userId == newInvestorId)
         assert(investment.productId == lastChanceProductId)
@@ -146,9 +190,10 @@ class InvestApplicationTests {
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content2)
+        val products: List<ProductDTO.Response> = objectMapper.readValue(content2)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ProductDTO.Response> =
+            products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
@@ -265,7 +310,7 @@ class InvestApplicationTests {
                 }
 
                 val content: String = resultActions.andReturn().response.contentAsString
-                val investments: List<InvestmentDTO> = objectMapper.readValue(content)
+                val investments: List<InvestmentDTO.Response> = objectMapper.readValue(content)
 
                 for (investment in investments) {
                     if (investment.amount <= 0 || investment.userId != i) {
@@ -321,12 +366,12 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id in 10L..19L }.toList()
+        val updatedProducts: List<ProductDTO.Response> = products.stream().filter { it.id in 10L..19L }.toList()
         assert(updatedProducts.size == 10)
         for (i in 0..9) {
-            val id :Long = updatedProducts[i].id!!
+            val id: Long = updatedProducts[i].id!!
             assert(updatedProducts[i].currentInvestingAmount == 110 + id.toInt())
             assert(updatedProducts[i].investorCount == 1)
             assert(!updatedProducts[i].soldOut!!)
@@ -365,9 +410,10 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO> = products.stream().filter { it.id == lastChanceProductId }.toList()
+        val updatedProducts: List<ProductDTO.Response> =
+            products.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
 
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
@@ -381,7 +427,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -398,7 +444,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -423,7 +469,7 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val user: InvestorDTO = objectMapper.readValue(content)
+        val user: InvestorDTO.Response = objectMapper.readValue(content)
 
         assert(user.name == "newname")
         assert(user.role == "USER")
@@ -433,6 +479,8 @@ class InvestApplicationTests {
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
     }
+
+    // TODO: test create product and investment with invalid userid or invalid authentication
 
     private fun signUp(name: String, password: String): ResultActions {
         return mvc.perform(
@@ -450,20 +498,40 @@ class InvestApplicationTests {
         )
     }
 
+    private fun createProduct(
+        userId: Long,
+        title: String?,
+        totalInvestingAmount: Int,
+        startedAt: LocalDateTime,
+        finishedAt: LocalDateTime
+    ): ResultActions {
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
+
+        return mvc.perform(
+            post("/product")
+                .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
+                .header("X-USER-ID", userId)
+                .param("title", title)
+                .param("totalInvestingAmount", totalInvestingAmount.toString())
+                .param("startedAt", startedAt.toString())
+                .param("finishedAt", finishedAt.toString())
+        )
+    }
+
     private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
 
         return mvc.perform(
             post("/investment")
                 .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
                 .header("X-USER-ID", userId)
-                .param("product_id", productId.toString())
+                .param("productId", productId.toString())
                 .param("amount", amount.toString())
         )
     }
 
     private fun getInvestments(userId: Long): ResultActions {
-        val user = InvestorDTO(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", "USER")
 
         return mvc.perform(
             get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)
@@ -488,9 +556,9 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO> = objectMapper.readValue(content)
+        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val checkProducts: List<ProductDTO> = products.stream().filter { it.id == productId }.toList()
+        val checkProducts: List<ProductDTO.Response> = products.stream().filter { it.id == productId }.toList()
 
         when (productId) {
             invalidProductId -> {

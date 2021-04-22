@@ -10,4 +10,7 @@ object ErrorCode {
     const val USER_NOT_FOUND = 90007
     const val WRONG_PASSWORD = 90008
     const val FORBIDDEN_REQUEST = 90009
+    const val INVALID_PRODUCT_TITLE = 90010
+    const val INVALID_TOTAL_INVESTING_AMOUNT =90011
+    const val INVALID_INVESTING_PERIOD = 90012
 }

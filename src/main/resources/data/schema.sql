@@ -15,6 +15,8 @@ CREATE TABLE product (
   started_at DATE NOT NULL,
   finished_at DATE NOT NULL,
   created_at DATE DEFAULT SYSDATE,
+  CONSTRAINT chk_total_investing_amount CHECK (total_investing_amount > 0),
+  CONSTRAINT chk_started_at_and_finished_at CHECK (started_at < finished_at),
   CONSTRAINT chk_current_investing_amount CHECK (total_investing_amount >= current_investing_amount)
 );
 

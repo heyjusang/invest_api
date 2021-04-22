@@ -30,10 +30,7 @@ class InvestmentRepositoryTests {
 
     @Test
     fun `we should create investment`() {
-        val investment = Investment()
-        investment.amount = 100
-        investment.userId = 1L
-        investment.productId = 1L
+        val investment = Investment(1, 1, 100)
 
         testRepository.save(investment)
 
@@ -46,18 +43,12 @@ class InvestmentRepositoryTests {
 
     @Test
     fun `we cannot create investment having same user id and same product id`() {
-        val investment = Investment()
-        investment.amount = 100
-        investment.userId = 1L
-        investment.productId = 1L
+        val investment = Investment(1, 1, 100)
 
         testRepository.save(investment)
 
         Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val investment2 = Investment()
-            investment2.amount = 100
-            investment2.userId = 1L
-            investment2.productId = 1L
+            val investment2 = Investment(1, 1, 100)
 
             testRepository.save(investment2)
         }
@@ -66,10 +57,7 @@ class InvestmentRepositoryTests {
     @Test
     fun `we cannot create investment having negative amount`() {
         Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val investment = Investment()
-            investment.amount = -100
-            investment.userId = 1L
-            investment.productId = 1L
+            val investment = Investment(1, 1, -100)
 
             testRepository.save(investment)
         }
@@ -78,10 +66,7 @@ class InvestmentRepositoryTests {
     @Test
     fun `we cannot create investment having zero amount`() {
         Assertions.assertThrows(DataIntegrityViolationException::class.java) {
-            val investment = Investment()
-            investment.amount = 0
-            investment.userId = 1L
-            investment.productId = 1L
+            val investment = Investment(1, 1, 0)
 
             testRepository.save(investment)
         }

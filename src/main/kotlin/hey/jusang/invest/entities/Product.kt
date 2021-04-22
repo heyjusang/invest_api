@@ -6,27 +6,28 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.LocalDateTime
 import javax.persistence.*
 import javax.validation.constraints.NotNull
+import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 
 @Entity
 @EntityListeners(AuditingEntityListener::class)
 class Product(
+    @NotNull
+    var title: String,
+    @Positive
+    var totalInvestingAmount: Int,
+    @NotNull
+    var startedAt: LocalDateTime,
+    @NotNull
+    var finishedAt: LocalDateTime
+) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
-    @NotNull
-    var title: String? = null,
+    var id: Long? = null
     @PositiveOrZero
-    var totalInvestingAmount: Int = 0,
+    var currentInvestingAmount: Int = 0
     @PositiveOrZero
-    var currentInvestingAmount: Int = 0,
-    @PositiveOrZero
-    var investorCount: Int = 0,
-    @NotNull
-    var startedAt: LocalDateTime? = null,
-    @NotNull
-    var finishedAt: LocalDateTime? = null
-) {
+    var investorCount: Int = 0
     @CreatedDate
     var createdAt: LocalDateTime? = null
 

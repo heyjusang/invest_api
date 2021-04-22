@@ -6,29 +6,20 @@ import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.services.SignService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.sql.SQLException
 
 @RestController
 class SignController(val signService: SignService) {
     @PostMapping("/signin")
-    fun signIn(
-        @RequestParam("name", required = true) name: String,
-        @RequestParam("password", required = true) password: String
-    ): ResponseEntity<Map<String, String>> {
-        val token: String = signService.signIn(name, password)
+    fun signIn(@ModelAttribute investor: InvestorDTO.Request): ResponseEntity<Map<String, String>> {
+        val token: String = signService.signIn(investor)
         return ResponseEntity(mapOf("token" to token), HttpStatus.OK)
     }
 
     @PostMapping("/signup")
-    fun signUp(
-        @RequestParam("name", required = true) name: String,
-        @RequestParam("password", required = true) password: String
-    ): ResponseEntity<InvestorDTO> {
-        return ResponseEntity(signService.signUp(name, password), HttpStatus.CREATED)
+    fun signUp(@ModelAttribute investor: InvestorDTO.Request): ResponseEntity<InvestorDTO.Response> {
+        return ResponseEntity(signService.signUp(investor), HttpStatus.CREATED)
     }
 
     @ExceptionHandler(SQLException::class)

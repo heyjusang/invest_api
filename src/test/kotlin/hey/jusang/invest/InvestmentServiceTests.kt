@@ -1,11 +1,10 @@
 package hey.jusang.invest
 
 import com.nhaarman.mockitokotlin2.whenever
-import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.entities.Investment
 import hey.jusang.invest.entities.Product
+import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.models.InvestmentDTO
-import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.repositories.InvestmentRepository
 import hey.jusang.invest.repositories.ProductRepository
 import hey.jusang.invest.services.InvestmentServiceImpl
@@ -15,8 +14,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import java.time.*
+import java.time.Clock
+import java.time.LocalDateTime
+import java.time.Month
+import java.time.ZoneId
 import java.util.*
 
 @ExtendWith(SpringExtension::class)
@@ -27,11 +31,11 @@ class InvestmentServiceTests {
     @Mock
     lateinit var productRepository: ProductRepository
 
-    @InjectMocks
-    lateinit var investmentService: InvestmentServiceImpl
-
     @Mock
     lateinit var clock: Clock
+
+    @InjectMocks
+    lateinit var investmentService: InvestmentServiceImpl
 
     @BeforeEach
     fun setup() {
@@ -49,50 +53,24 @@ class InvestmentServiceTests {
     }
 
     @Test
-    fun `we should get products`() {
-        val fixedNow = LocalDateTime.now(clock)
-        val data: List<Product> = listOf(
-            Product(
-                1, "product 1", 400000, 10000, 1,
-                LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11),
-            ),
-            Product(
-                5, "product 5", 500000, 20000, 1,
-                LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-                LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
-            )
-        )
-
-        whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(fixedNow, fixedNow)).thenReturn(data)
-
-        val products: List<ProductDTO> = investmentService.getProducts()
-        assert(products == data.map { ProductDTO(it) })
-    }
-
-    @Test
     fun `we should get investments of user by user id`() {
         val data: List<Investment> = listOf(
-            Investment(
-                4, 1, 1, 10000
-            ),
-            Investment(
-                15, 1, 33, 45000
-            )
+            Investment(1, 1, 10000),
+            Investment(1, 33, 45000)
         )
 
         whenever(investmentRepository.findAllByUserId(1)).thenReturn(data)
 
-        val investments: List<InvestmentDTO> = investmentService.getInvestments(1)
+        val investments: List<InvestmentDTO.Response> = investmentService.getInvestments(1)
 
-        assert(investments == data.map { InvestmentDTO(it) })
+        assert(investments == data.map { InvestmentDTO.Response(it) })
     }
 
     @Test
     fun `we should create investment`() {
-        val investment = Investment(null, 1, 5, 10)
+        val investment = Investment(1, 5, 10)
         val product = Product(
-            5, "product 5", 500000, 20000, 1,
+            "product 5", 500000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -108,14 +86,14 @@ class InvestmentServiceTests {
         whenever(productRepository.save(product))
             .thenReturn(product)
 
-        val investmentDTO: InvestmentDTO = investmentService.createInvestment(1, 5, 10)
-        assert(investmentDTO.toEntity() == investment)
+        val investmentDTO: InvestmentDTO.Response = investmentService.createInvestment(1, InvestmentDTO.Request(5, 10))
+        assert(investmentDTO == InvestmentDTO.Response(investment))
     }
 
     @Test
     fun `we should get InvalidAmountException while creating investment with invalid amount`() {
         Assertions.assertThrows(InvalidAmountException::class.java) {
-            investmentService.createInvestment(1, 5, -100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, -100))
         }
     }
 
@@ -125,7 +103,7 @@ class InvestmentServiceTests {
             .thenReturn(Optional.ofNullable(null))
 
         Assertions.assertThrows(ProductNotFoundException::class.java) {
-            investmentService.createInvestment(1, 9999, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(9999, 100))
         }
     }
 
@@ -135,7 +113,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2022, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
                     )
@@ -143,7 +121,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(ProductNotOpenedException::class.java) {
-            investmentService.createInvestment(1, 5, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 100))
         }
     }
 
@@ -153,7 +131,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2020, Month.MARCH, 21, 5, 11, 11)
                     )
@@ -161,7 +139,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(ProductClosedException::class.java) {
-            investmentService.createInvestment(1, 5, 100)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 100))
         }
     }
 
@@ -171,7 +149,7 @@ class InvestmentServiceTests {
             .thenReturn(
                 Optional.of(
                     Product(
-                        5, "product 5", 500000, 20000, 1,
+                        "product 5", 500000,
                         LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                         LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
                     )
@@ -179,7 +157,7 @@ class InvestmentServiceTests {
             )
 
         Assertions.assertThrows(TotalInvestingAmountExceededException::class.java) {
-            investmentService.createInvestment(1, 5, 1000000)
+            investmentService.createInvestment(1, InvestmentDTO.Request(5, 1000000))
         }
     }
 }

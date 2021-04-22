@@ -38,7 +38,8 @@ class SignServiceTests {
 
     @Test
     fun `we should get token when signing in`() {
-        val data = Investor(1, "username", "encodedPassword", "USER")
+        val data = Investor("username", "encodedPassword", "USER")
+        data.id = 1
 
         whenever(investorRepository.findByName("username"))
             .thenReturn(Optional.of(data))
@@ -46,10 +47,10 @@ class SignServiceTests {
         whenever(passwordEncoder.matches("password", "encodedPassword"))
             .thenReturn(true)
 
-        whenever(jwtTokenProvider.createToken(InvestorDTO(data)))
+        whenever(jwtTokenProvider.createToken(InvestorDTO.Data(data)))
             .thenReturn("TEST TOKEN")
 
-        val token: String = signService.signIn("username", "password")
+        val token: String = signService.signIn(InvestorDTO.Request("username", "password"))
         assert(token == "TEST TOKEN")
     }
 
@@ -61,13 +62,13 @@ class SignServiceTests {
         whenever(passwordEncoder.encode("password"))
             .thenReturn("encodedPassword")
 
-        val investor = Investor(null, "username", "encodedPassword", "USER")
+        val investor = Investor("username", "encodedPassword", "USER")
 
         whenever(investorRepository.save(investor))
             .thenReturn(investor)
 
-        val result: InvestorDTO = signService.signUp("username", "password")
-        assert(InvestorDTO(investor) == result)
+        val result: InvestorDTO.Response = signService.signUp(InvestorDTO.Request("username", "password"))
+        assert(InvestorDTO.Response(investor) == result)
     }
 
     @Test
@@ -76,13 +77,13 @@ class SignServiceTests {
             .thenReturn(Optional.ofNullable(null))
 
         Assertions.assertThrows(UserNotFoundException::class.java) {
-            signService.signIn("wrong name", "password")
+            signService.signIn(InvestorDTO.Request("wrong name", "password"))
         }
     }
 
     @Test
     fun `we should get WrongPasswordException when signing in with wrong password`() {
-        val data = Investor(1, "username", "encodedPassword", "USER")
+        val data = Investor("username", "encodedPassword", "USER")
 
         whenever(investorRepository.findByName("username"))
             .thenReturn(Optional.of(data))
@@ -91,7 +92,7 @@ class SignServiceTests {
             .thenReturn(false)
 
         Assertions.assertThrows(WrongPasswordException::class.java) {
-            signService.signIn("username", "wrong password")
+            signService.signIn(InvestorDTO.Request("username", "wrong password"))
         }
     }
 
@@ -101,7 +102,7 @@ class SignServiceTests {
             .thenReturn(1)
 
         Assertions.assertThrows(UserAlreadyExistedException::class.java) {
-            signService.signUp("existed", "password")
+            signService.signUp(InvestorDTO.Request("existed", "password"))
         }
     }
 }
