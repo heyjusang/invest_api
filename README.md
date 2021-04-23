@@ -4,6 +4,7 @@
 * Spring Boot 2.4.3
   * Dependency
     * spring-boot-starter-web (Spring MVC)
+    * spring-boot-starter-aop (AspectJ)
     * spring-boot-starter-data-jpa (JPA)
     * h2 (H2 in-memory database (mode: oracle))
     * mockito-kotlin (Mockito for Kotlin)
