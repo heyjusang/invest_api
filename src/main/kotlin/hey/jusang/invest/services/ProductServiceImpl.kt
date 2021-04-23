@@ -1,5 +1,6 @@
 package hey.jusang.invest.services
 
+import hey.jusang.invest.annotations.LogExecutionTime
 import hey.jusang.invest.entities.Product
 import hey.jusang.invest.exceptions.InvalidInvestingPeriodException
 import hey.jusang.invest.exceptions.InvalidProductTitleException
@@ -12,12 +13,14 @@ import java.time.LocalDateTime
 
 @Component
 class ProductServiceImpl(val productRepository: ProductRepository, val clock: Clock) : ProductService {
+    @LogExecutionTime
     override fun getProducts(): List<ProductDTO.Response> {
         val current = LocalDateTime.now(clock)
         return productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
             .map { ProductDTO.Response(it) }
     }
 
+    @LogExecutionTime
     override fun createProduct(productDTO: ProductDTO.Request): ProductDTO.Response {
         if (productDTO.title.isBlank()) throw InvalidProductTitleException()
 

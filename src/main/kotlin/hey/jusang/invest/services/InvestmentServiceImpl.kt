@@ -1,5 +1,6 @@
 package hey.jusang.invest.services
 
+import hey.jusang.invest.annotations.LogExecutionTime
 import hey.jusang.invest.exceptions.*
 import hey.jusang.invest.entities.Investment
 import hey.jusang.invest.entities.Product
@@ -17,12 +18,14 @@ class InvestmentServiceImpl(
     val productRepository: ProductRepository,
     val clock: Clock
 ) : InvestmentService {
+    @LogExecutionTime
     override fun getInvestments(userId: Long): List<InvestmentDTO.Response> {
         return investmentRepository.findAllByUserId(userId)
             .map { InvestmentDTO.Response(it) }
     }
 
     @Transactional
+    @LogExecutionTime
     override fun createInvestment(userId: Long, investmentDTO: InvestmentDTO.Request): InvestmentDTO.Response {
         if (investmentDTO.amount <= 0) throw InvalidAmountException()
 

@@ -1,5 +1,6 @@
 package hey.jusang.invest.services
 
+import hey.jusang.invest.annotations.LogExecutionTime
 import hey.jusang.invest.entities.Investor
 import hey.jusang.invest.exceptions.UserAlreadyExistedException
 import hey.jusang.invest.exceptions.UserNotFoundException
@@ -16,6 +17,7 @@ class SignServiceImpl(
     val passwordEncoder: PasswordEncoder,
     val jwtTokenProvider: JwtTokenProvider
 ) : SignService {
+    @LogExecutionTime
     override fun signIn(investorDTO: InvestorDTO.Request): String {
         val investor = investorRepository.findByName(investorDTO.name).orElseThrow { UserNotFoundException() }
 
@@ -25,6 +27,7 @@ class SignServiceImpl(
         return jwtTokenProvider.createToken(InvestorDTO.Data(investor))
     }
 
+    @LogExecutionTime
     override fun signUp(investorDTO: InvestorDTO.Request): InvestorDTO.Response {
         if (investorRepository.countByName(investorDTO.name) != 0L) throw UserAlreadyExistedException()
 
