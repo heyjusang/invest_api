@@ -2,9 +2,7 @@ package hey.jusang.invest.aspects
 
 import mu.KotlinLogging
 import org.aspectj.lang.JoinPoint
-import org.aspectj.lang.annotation.After
-import org.aspectj.lang.annotation.Aspect
-import org.aspectj.lang.annotation.Before
+import org.aspectj.lang.annotation.*
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -23,5 +21,10 @@ class LogAspect {
     @After("@annotation(hey.jusang.invest.annotations.LogExecutionTime)")
     fun afterExecutingTime(jointPoint: JoinPoint) {
         logger.info { "${LocalDateTime.now()} [END] ${jointPoint.signature}" }
+    }
+
+    @AfterThrowing(throwing="throwable", pointcut="within(hey.jusang.invest.services.*)")
+    fun afterException(jointPoint: JoinPoint, throwable: Throwable) {
+        logger.error(throwable) { "${LocalDateTime.now()} [THROW] ${jointPoint.signature}: $throwable" }
     }
 }
