@@ -10,6 +10,7 @@
     * mockito-kotlin (Mockito for Kotlin)
     * spring-boot-starter-security (Spring Authentication)
     * jjwt-api, jjwt-impl, jjwt-jackson (JWT)
+    * kotlin-logging-jvm (Logger with slf4j)
 * Java 11
 * Kotlin 1.4.30
  
