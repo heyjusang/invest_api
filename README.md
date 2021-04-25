@@ -167,12 +167,6 @@
     * [POST] /product (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {title: String, totalInvestmentAmount: Int, startedAt: DateTime, finishedAt: DateTime})
     * 투자 상품 만들기
     * Product 리턴
-  * sqlException() (ExceptionHandler)
-    * DB 에러를 핸들링
-    * 에러 발생 시 {errorCode: Int, message: String} 형태로 리턴 (Http Status Code: 500)
-  * baseException() (ExceptionHandler)
-    * service layer 로직상에서 발생한 에러 핸들링
-    * 에러 발생 시 {errorCode: Int, message: String) 형태로 리턴 (Http Status Code: 400 or 404)
 * InvestmentController
   * getInvestments()
     * [GET] /investments (Header: {X-USER-ID: Int})
@@ -184,8 +178,6 @@
     * X-USER-ID에 해당하는 유저가 product_id에 해당하는 상품에 amount만큼의 금액을 투자
     * Authentication 정보의 user id와 X-USER-ID가 일치해야함
     * 성공 시, investment 리턴
-  * sqlException() (ExceptionHandler)
-  * baseException() (ExceptionHandler)
 * SignController
   * signIn()
     * [POST] /signin (Param: {name: String, password: String})
@@ -195,8 +187,6 @@
     * [POST] /signup (Param: {name: String, password: String})
     * 회원가입
     * 성공 시, investor 리턴
-  * sqlException() (ExceptionHandler)
-  * baseException() (ExceptionHandler)
     
 ### services/
 * ProductService
