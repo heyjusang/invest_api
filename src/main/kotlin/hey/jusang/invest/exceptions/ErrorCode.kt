@@ -1,6 +1,7 @@
 package hey.jusang.invest.exceptions
 
 object ErrorCode {
+    const val INTERNAL_ERROR = 90000
     const val PRODUCT_NOT_FOUND = 90001
     const val PRODUCT_NOT_OPENED = 90002
     const val PRODUCT_CLOSED = 90003
