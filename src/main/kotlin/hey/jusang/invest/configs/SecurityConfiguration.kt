@@ -17,6 +17,7 @@ class SecurityConfiguration(val jwtAuthenticationFilter: JwtAuthenticationFilter
             .and()
             .authorizeRequests().antMatchers("/signin", "/signup").permitAll()
             .antMatchers(HttpMethod.GET, "/products").permitAll()
+            .antMatchers(HttpMethod.POST, "/product").hasRole("ADMIN")
             .anyRequest().hasRole("USER")
             .and()
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)

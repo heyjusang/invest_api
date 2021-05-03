@@ -47,9 +47,17 @@ class JwtTokenProvider {
         val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
 
         // TODO: UserDetailsService
+        val role: String = claims["role"] as String
+        val roles = mutableListOf<String>()
+
+        if (role == "ADMIN"){
+            roles.add("USER")
+        }
+        roles.add(role)
+
         val builder: User.UserBuilder = User.withUsername(claims["name"] as String)
                 .password(claims["password"] as String)
-                .roles(claims["role"] as String)
+                .roles(*roles.toTypedArray())
         val userDetails: UserDetails = builder.build()
 
         return UsernamePasswordAuthenticationToken(userDetails, userDetails.password, userDetails.authorities)

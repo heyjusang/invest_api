@@ -81,7 +81,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1")
+    @WithMockUser(username = "1", roles = ["ADMIN"])
     fun `we should create product`() {
         val data = ProductDTO.Response(
             1, "product name", 10000, 0, 0, time1, time2, false
@@ -110,6 +110,16 @@ class ProductControllerTests {
 
     @Test
     @WithMockUser(username = "1")
+    fun `we cannot create product with role of USER`() {
+        whenever(productService.createProduct(ProductDTO.Request("product name", 10000, time1, time2)))
+            .thenReturn(ProductDTO.Response(1, "product name", 10000, 0, 0, time1, time2, false))
+
+        createProduct(1, "product name", 10000, time1, time2)
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    @WithMockUser(username = "1", roles=["ADMIN"])
     fun `we should handle SQLException while creating product with database problem`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", 1000, time1, time2)))
             .thenAnswer { throw SQLException("error message") }
@@ -121,7 +131,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1")
+    @WithMockUser(username = "1", roles=["ADMIN"])
     fun `we should handle InvalidProductTitleException while creating product with invalid title`() {
         whenever(productService.createProduct(ProductDTO.Request("", 10000, time1, time2)))
             .thenAnswer { throw InvalidProductTitleException() }
@@ -133,7 +143,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1")
+    @WithMockUser(username = "1", roles=["ADMIN"])
     fun `we should handle InvalidTotalInvestingAmountException while creating product with invalid total amount`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", -10000, time1, time2)))
             .thenAnswer { throw InvalidTotalInvestingAmountException() }
@@ -145,7 +155,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1")
+    @WithMockUser(username = "1", roles=["ADMIN"])
     fun `we should handle InvalidInvestingPeriodException while creating product with invalid investing period`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", 10000, time2, time1)))
             .thenAnswer { throw InvalidInvestingPeriodException() }
