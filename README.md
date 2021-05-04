@@ -293,7 +293,7 @@
 * 에러 발생 시 BaseException 리턴
 
 ## Test
-* 총 92개 테스트
+* 총 94개 테스트
 
 ### ProductRepositoryTests
 * 6개 테스트
@@ -338,6 +338,7 @@
 ### ProductServiceTests
 * 6개 테스트
 * Service Layer 기능 검사를 위한 단위 테스트
+
 | 테스트 이름| 테스트 내용|
 |---|---|
 |mock should be configured| 환경 테스트|
@@ -374,7 +375,7 @@
 |we should get UserAlreadyExistedException when sign up with existed name| signUp() 실패 테스트 - 이미 있는 유저 이름|
 
 ### ProductControllerTests
-* 9개 테스트
+* 10개 테스트
 * Controller Layer 기능 검사를 위한 단위 테스트
 
 | 테스트 이름| 테스트 내용|
@@ -383,6 +384,7 @@
 |we should get products|[GET] /products 테스트|
 |we should handle SQLException while getting products with database problem| [GET] /products 중 DB 에러 리턴 테스트|
 |we should create product| [POST] /product 테스트|
+|we cannot create produt with role of USER| USER 권한으로 [POST] /product 수행불가|
 |we cannot create product without authentication| 인증 없이 [POST] /product 수행 불가|
 |we should handle SQLException while creating product with database problem| [POST] /product 중 DB 에러 리턴 테스트|
 |we should handle InvalidProductTitleException while creating product with invalid title| [POST] /product 중 InvalidProductTitleException 에러 리턴 테스트|
@@ -422,7 +424,7 @@
 |we should handle UserAlreadyExistedException while signing up with existed name| [POST] /signup 중 UserAlreadyExistedException 에러 리턴 테스트|
 
 ### InvestApplicationTests
-* 23개 테스트
+* 24개 테스트
 * 실제 Application 단위의 통합 테스트
 
 | 테스트 이름| 테스트 내용|
@@ -430,6 +432,7 @@
 |application should be configured| 환경 테스트 |
 |we should get 23 products (including 1 sold out) when requesting a list of product within the period| 상품 조회 테스트|
 |we should create product| 상품 생성 테스트|
+|we cannot create product with role of USER| USER 권한으로 상품생성 불가능|
 |we cannot create product with empty title| 빈 제목 상품 생성 테스트|
 |we cannot create product with invalid total investing amount| 0 이하 상품 생성 테스트|
 |we cannot create product with invalid investing period| 잘못된 기간 상품 생성 테스트|

@@ -93,7 +93,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create product`() {
-        val resultActions: ResultActions = createProduct(1, "product name", 10000,
+        val resultActions: ResultActions = createProduct(1, "ADMIN", "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
         resultActions.andExpect(status().isCreated)
@@ -105,8 +105,16 @@ class InvestApplicationTests {
     }
 
     @Test
+    fun `we cannot create product with role of USER`() {
+        createProduct(1, "USER", "product name", 10000,
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `we cannot create product with empty title`() {
-        createProduct(1, "", 10000,
+        createProduct(1, "ADMIN", "", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
             .andExpect(status().isBadRequest)
@@ -116,7 +124,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create product with invalid total investing amount`() {
-        createProduct(1, "product name", -10000,
+        createProduct(1, "ADMIN", "product name", -10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
             .andExpect(status().isBadRequest)
@@ -126,7 +134,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create product with invalid investing period`() {
-        createProduct(1, "product name", 10000,
+        createProduct(1, "ADMIN", "product name", 10000,
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11))
             .andExpect(status().isBadRequest)
@@ -500,12 +508,13 @@ class InvestApplicationTests {
 
     private fun createProduct(
         userId: Long,
+        userRole: String,
         title: String?,
         totalInvestingAmount: Int,
         startedAt: LocalDateTime,
         finishedAt: LocalDateTime
     ): ResultActions {
-        val user = InvestorDTO.Data(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test", "password", userRole)
 
         return mvc.perform(
             post("/product")
