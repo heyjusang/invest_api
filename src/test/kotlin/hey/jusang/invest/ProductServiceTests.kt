@@ -14,6 +14,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.Clock
 import java.time.LocalDateTime
@@ -21,7 +25,7 @@ import java.time.Month
 import java.time.ZoneId
 
 @ExtendWith(SpringExtension::class)
-class ProductServiceTests {
+class   ProductServiceTests {
     @Mock
     lateinit var productRepository: ProductRepository
 
@@ -48,8 +52,9 @@ class ProductServiceTests {
 
     @Test
     fun `we should get products`() {
+        val pageable: Pageable = PageRequest.of(0, 30)
         val fixedNow = LocalDateTime.now(clock)
-        val data: List<Product> = listOf(
+        val data: Slice<Product> = SliceImpl(listOf(
             Product("product 1", 400000,
                 LocalDateTime.of(2020, Month.MARCH, 10, 11, 11, 11),
                 LocalDateTime.of(2022, Month.MARCH, 15, 11, 11, 11),
@@ -58,12 +63,12 @@ class ProductServiceTests {
                 LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
                 LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
             )
-        )
+        ))
 
-        whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(fixedNow, fixedNow)).thenReturn(data)
+        whenever(productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(fixedNow, fixedNow, pageable)).thenReturn(data)
 
-        val products: List<ProductDTO.Response> = productService.getProducts()
-        assert(products == data.map { ProductDTO.Response(it) })
+        val products: Slice<ProductDTO.Response> = productService.getProducts(pageable)
+        assert(products.content == data.content.map { ProductDTO.Response(it) })
     }
 
     @Test

@@ -10,6 +10,9 @@ import org.mockito.Mock
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.Month
@@ -42,10 +45,13 @@ class ProductRepositoryTests {
     fun `we should get 23 products (including 1 sold out) when requesting a list of product within the period`() {
         val current: LocalDateTime = LocalDateTime.now(clock)
         var soldOut = 0
-        val products: List<Product> = testRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
-        assert(products.size == 23)
+        val pageable: Pageable = PageRequest.of(0, 30)
 
-        for (product in products) {
+        val products: Slice<Product> =
+            testRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current, pageable)
+        assert(products.content.size == 23)
+
+        for (product in products.content) {
             assert(current > product.startedAt && current < product.finishedAt)
 
             if (product.totalInvestingAmount == product.currentInvestingAmount) {
