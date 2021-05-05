@@ -430,7 +430,7 @@
 | 테스트 이름| 테스트 내용|
 |---|---|
 |application should be configured| 환경 테스트 |
-|we should get 23 products (including 1 sold out) when requesting a list of product within the period| 상품 조회 테스트|
+|we should get products when requesting a list of product within the period| 상품 조회 테스트|
 |we should create product| 상품 생성 테스트|
 |we cannot create product with role of USER| USER 권한으로 상품생성 불가능|
 |we cannot create product with empty title| 빈 제목 상품 생성 테스트|
