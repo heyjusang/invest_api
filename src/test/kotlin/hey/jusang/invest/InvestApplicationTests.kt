@@ -66,29 +66,23 @@ class InvestApplicationTests {
     }
 
     @Test
-    fun `we should get 23 products (including 1 sold out) when requesting a list of product within the period`() {
+    fun `we should get products when requesting a list of product within the period`() {
         val current: LocalDateTime = LocalDateTime.now()
-        var soldOut = 0
         val resultActions: ResultActions = getProducts()
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
         val products: List<ProductDTO.Response> = objectMapper.readValue(content)
 
-        assert(products.size == 23)
-
         for (product in products) {
             assert(current >= product.startedAt && current < product.finishedAt)
 
-            if (product.soldOut!!) {
-                soldOut++
+            if (product.soldOut) {
                 assert(product.totalInvestingAmount == product.currentInvestingAmount)
             } else {
                 assert(product.totalInvestingAmount > product.currentInvestingAmount)
             }
         }
-
-        assert(soldOut == 1)
     }
 
     @Test
