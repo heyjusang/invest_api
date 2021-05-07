@@ -22,11 +22,26 @@
 
 ## API 목록
 * 모집 기간 내 투자 상품 조회
-  * [GET] /products
+  * [GET] /products (Param: {page: Int, size: Int})
   * 리턴
   ``` json
-  [{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}, ...]
+  {"content":[{"id":1,"title":"Normal product","totalInvestingAmount":2000000,"currentInvestingAmount":100,"investorCount":1,"startedAt":"2021-03-10T12:00:00","finishedAt":"2022-04-15T12:00:00","soldOut":false}, ...], 
+   "pageable": {"sort":{"sorted":false,"unsorted":true,"empty":true},
+                "offset":0,
+                "pageNumber":0,
+                "pageSize":5,
+                "paged":true,
+                "unpaged":false
+               },
+   "size":5,
+   "number":0,
+   "sort":{"sorted":false,"unsorted":true,"empty":true},
+   "numberOfElements":5,
+   "first":true,
+   "last":false,
+   "empty":false }
   ```
+ 
 * 투자 상품 만들기 
   *  [POST] /product (Header: {X-USER-ID: Int, X-AUTH-TOKEN: String}, Param: {title: String, totalInvestmentAmount: Int, startedAt: DateTime, finishedAt: DateTime})
   * 리턴
@@ -160,7 +175,7 @@
 ### controllers/
 * ProductController
   * getProducts()
-    * [GET] /products
+    * [GET] /products (Param: {page: Int, size: Int})
     * 상품 모집 기간 내의 전체 투자 상품 조회
     * Product 리스트 리턴
   * createProduct()
