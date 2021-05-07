@@ -9,6 +9,7 @@ import hey.jusang.invest.models.InvestmentDTO
 import hey.jusang.invest.models.InvestorDTO
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.utils.JwtTokenProvider
+import hey.jusang.invest.utils.TestSliceImpl
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -72,9 +73,9 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
-        for (product in products) {
+        for (product in products.content) {
             assert(current >= product.startedAt && current < product.finishedAt)
 
             if (product.soldOut) {
@@ -87,9 +88,11 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create product`() {
-        val resultActions: ResultActions = createProduct(1, "ADMIN", "product name", 10000,
+        val resultActions: ResultActions = createProduct(
+            1, "ADMIN", "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+        )
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
@@ -100,17 +103,21 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create product with role of USER`() {
-        createProduct(1, "USER", "product name", 10000,
+        createProduct(
+            1, "USER", "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+        )
             .andExpect(status().isForbidden)
     }
 
     @Test
     fun `we cannot create product with empty title`() {
-        createProduct(1, "ADMIN", "", 10000,
+        createProduct(
+            1, "ADMIN", "", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+        )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_PRODUCT_TITLE))
@@ -118,9 +125,11 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create product with invalid total investing amount`() {
-        createProduct(1, "ADMIN", "product name", -10000,
+        createProduct(
+            1, "ADMIN", "product name", -10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
-            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11))
+            LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
+        )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_TOTAL_INVESTING_AMOUNT))
@@ -128,9 +137,11 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create product with invalid investing period`() {
-        createProduct(1, "ADMIN", "product name", 10000,
+        createProduct(
+            1, "ADMIN", "product name", 10000,
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
-            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11))
+            LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11)
+        )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INVESTING_PERIOD))
@@ -192,14 +203,14 @@ class InvestApplicationTests {
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content2)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content2)
 
         val updatedProducts: List<ProductDTO.Response> =
-            products.stream().filter { it.id == lastChanceProductId }.toList()
+            products.content.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
-        assert(updatedProducts[0].soldOut!!)
+        assert(updatedProducts[0].soldOut)
     }
 
     @Test
@@ -368,15 +379,15 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO.Response> = products.stream().filter { it.id in 10L..19L }.toList()
+        val updatedProducts: List<ProductDTO.Response> = products.content.stream().filter { it.id in 10L..19L }.toList()
         assert(updatedProducts.size == 10)
         for (i in 0..9) {
             val id: Long = updatedProducts[i].id!!
             assert(updatedProducts[i].currentInvestingAmount == 110 + id.toInt())
             assert(updatedProducts[i].investorCount == 1)
-            assert(!updatedProducts[i].soldOut!!)
+            assert(!updatedProducts[i].soldOut)
         }
     }
 
@@ -412,15 +423,15 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
         val updatedProducts: List<ProductDTO.Response> =
-            products.stream().filter { it.id == lastChanceProductId }.toList()
+            products.content.stream().filter { it.id == lastChanceProductId }.toList()
         assert(updatedProducts.size == 1)
 
         assert(updatedProducts[0].currentInvestingAmount == 2000000)
         assert(updatedProducts[0].investorCount == 3)
-        assert(updatedProducts[0].soldOut!!)
+        assert(updatedProducts[0].soldOut)
     }
 
     @Test
@@ -541,8 +552,8 @@ class InvestApplicationTests {
         )
     }
 
-    private fun getProducts(): ResultActions {
-        return mvc.perform(get("/products"))
+    private fun getProducts(page: Int = 0, size: Int = 30): ResultActions {
+        return mvc.perform(get("/products").param("page", page.toString()).param("size", size.toString()))
     }
 
     private fun checkInvestmentNotCreated(userId: Long) {
@@ -559,9 +570,9 @@ class InvestApplicationTests {
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val checkProducts: List<ProductDTO.Response> = products.stream().filter { it.id == productId }.toList()
+        val checkProducts: List<ProductDTO.Response> = products.content.stream().filter { it.id == productId }.toList()
 
         when (productId) {
             invalidProductId -> {

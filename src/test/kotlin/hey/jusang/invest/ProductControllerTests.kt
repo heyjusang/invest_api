@@ -13,10 +13,14 @@ import hey.jusang.invest.exceptions.InvalidTotalInvestingAmountException
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.services.ProductService
 import hey.jusang.invest.utils.JwtTokenProvider
+import hey.jusang.invest.utils.TestSliceImpl
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.security.test.context.support.WithAnonymousUser
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
@@ -49,32 +53,34 @@ class ProductControllerTests {
 
     @Test
     fun `we should get products`() {
-        val data: List<ProductDTO.Response> = listOf(
-            ProductDTO.Response(
-                1, "product 1", 400000, 10000, 1, time1, time2, false
-            ),
-            ProductDTO.Response(
-                5, "product 5", 500000, 20000, 1, time1, time2, false
+        val data: Slice<ProductDTO.Response> = SliceImpl(
+            listOf(
+                ProductDTO.Response(
+                    1, "product 1", 400000, 10000, 1, time1, time2, false
+                ),
+                ProductDTO.Response(
+                    5, "product 5", 500000, 20000, 1, time1, time2, false
+                )
             )
         )
 
-        whenever(productService.getProducts()).thenReturn(data)
+        whenever(productService.getProducts(PageRequest.of(0, 30))).thenReturn(data)
 
-        val resultActions: ResultActions = getProducts()
+        val resultActions: ResultActions = getProducts(0, 30)
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
-        val products: List<ProductDTO.Response> = objectMapper.readValue(content)
+        val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
         assert(products == data)
     }
 
     @Test
     fun `we should handle SQLException while getting products with database problem`() {
-        whenever(productService.getProducts())
+        whenever(productService.getProducts(PageRequest.of(0, 30)))
             .thenAnswer { throw SQLException("error message") }
 
-        getProducts()
+        getProducts(0, 30)
             .andExpect(status().isInternalServerError)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.message").value("error message"))
@@ -119,7 +125,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1", roles=["ADMIN"])
+    @WithMockUser(username = "1", roles = ["ADMIN"])
     fun `we should handle SQLException while creating product with database problem`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", 1000, time1, time2)))
             .thenAnswer { throw SQLException("error message") }
@@ -131,7 +137,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1", roles=["ADMIN"])
+    @WithMockUser(username = "1", roles = ["ADMIN"])
     fun `we should handle InvalidProductTitleException while creating product with invalid title`() {
         whenever(productService.createProduct(ProductDTO.Request("", 10000, time1, time2)))
             .thenAnswer { throw InvalidProductTitleException() }
@@ -143,7 +149,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1", roles=["ADMIN"])
+    @WithMockUser(username = "1", roles = ["ADMIN"])
     fun `we should handle InvalidTotalInvestingAmountException while creating product with invalid total amount`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", -10000, time1, time2)))
             .thenAnswer { throw InvalidTotalInvestingAmountException() }
@@ -155,7 +161,7 @@ class ProductControllerTests {
     }
 
     @Test
-    @WithMockUser(username = "1", roles=["ADMIN"])
+    @WithMockUser(username = "1", roles = ["ADMIN"])
     fun `we should handle InvalidInvestingPeriodException while creating product with invalid investing period`() {
         whenever(productService.createProduct(ProductDTO.Request("product name", 10000, time2, time1)))
             .thenAnswer { throw InvalidInvestingPeriodException() }
@@ -183,7 +189,11 @@ class ProductControllerTests {
         )
     }
 
-    private fun getProducts(): ResultActions {
-        return mvc.perform(MockMvcRequestBuilders.get("/products"))
+    private fun getProducts(page: Int, size: Int): ResultActions {
+        return mvc.perform(
+            MockMvcRequestBuilders.get("/products")
+                .param("page", page.toString())
+                .param("size", size.toString())
+        )
     }
 }

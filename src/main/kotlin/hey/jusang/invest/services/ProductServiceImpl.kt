@@ -7,6 +7,7 @@ import hey.jusang.invest.exceptions.InvalidProductTitleException
 import hey.jusang.invest.exceptions.InvalidTotalInvestingAmountException
 import hey.jusang.invest.models.ProductDTO
 import hey.jusang.invest.repositories.ProductRepository
+import org.springframework.data.domain.*
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDateTime
@@ -14,10 +15,12 @@ import java.time.LocalDateTime
 @Component
 class ProductServiceImpl(val productRepository: ProductRepository, val clock: Clock) : ProductService {
     @LogExecutionTime
-    override fun getProducts(): List<ProductDTO.Response> {
+    override fun getProducts(pageable: Pageable): Slice<ProductDTO.Response> {
         val current = LocalDateTime.now(clock)
-        return productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current)
-            .map { ProductDTO.Response(it) }
+        val slice: Slice<Product> =
+            productRepository.findAllByStartedAtBeforeAndFinishedAtAfter(current, current, pageable)
+
+        return slice.map { ProductDTO.Response(it) }
     }
 
     @LogExecutionTime
