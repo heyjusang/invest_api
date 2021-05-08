@@ -17,7 +17,7 @@ import javax.annotation.PostConstruct
 import javax.servlet.http.HttpServletRequest
 
 @Component
-class JwtTokenProvider {
+class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
     @Value("\${spring.jwt.secret}")
     private lateinit var secret: String
     private lateinit var key: Key
@@ -31,6 +31,7 @@ class JwtTokenProvider {
     fun createToken(investor: InvestorDTO.Data): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(investor.id.toString())
+        // TODO : need ?
         claims["name"] = investor.id.toString()
         claims["password"] = investor.encryptedPassword
         claims["role"] = investor.role
@@ -45,21 +46,10 @@ class JwtTokenProvider {
 
     fun getAuthentication(token: String): Authentication {
         val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
+        val id: String = claims.subject
 
-        // TODO: UserDetailsService
-        val role: String = claims["role"] as String
-        val roles = mutableListOf<String>()
-
-        if (role == "ADMIN"){
-            roles.add("USER")
-        }
-        roles.add(role)
-
-        val builder: User.UserBuilder = User.withUsername(claims["name"] as String)
-                .password(claims["password"] as String)
-                .roles(*roles.toTypedArray())
-        val userDetails: UserDetails = builder.build()
-
+        // TODO: ROLE_ADMIN
+        val userDetails: UserDetails = investUserDetailsService.loadUserByUsername(id)
         return UsernamePasswordAuthenticationToken(userDetails, userDetails.password, userDetails.authorities)
     }
 
