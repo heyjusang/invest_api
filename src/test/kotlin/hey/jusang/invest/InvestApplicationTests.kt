@@ -38,8 +38,8 @@ class InvestApplicationTests {
     /*
      * product 1: Normal Product
      * product 2: Closed Product
-     * product 3: Sold-out Product - investor: user 10, user 11
-     * product 4: Last chance Product (remaining amount is 1) - investor: user10, user 12
+     * product 3: Sold-out Product - investor: user 2, user 4
+     * product 4: Last chance Product (remaining amount is 1) - investor: user 2, user 5
      * product 5: Not opened Product
      * product 6~25: Dummy Normal Product
      */
@@ -49,10 +49,14 @@ class InvestApplicationTests {
     val soldOutProductId = 3L
     val lastChanceProductId = 4L
     val notOpenedProductId = 5L
+    val dummyProductId = 6L
     val invalidProductId = 9999L
 
-    val investorId = 10L
-    val newInvestorId = 99L
+    val adminId = 1L
+    val investorId = 2L
+
+    // user 3~12 : used for multi thread test
+    val newInvestorId = 13L // for single test
 
     @Autowired
     lateinit var mvc: MockMvc
@@ -104,7 +108,7 @@ class InvestApplicationTests {
     @Test
     fun `we cannot create product with role of USER`() {
         createProduct(
-            1, "USER", "product name", 10000,
+            newInvestorId, "USER", "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -148,7 +152,7 @@ class InvestApplicationTests {
     }
 
     @Test
-    fun `we should get 2 investments when requesting a list of investment for user with an ID of 10`() {
+    fun `we should get 2 investments when requesting a list of investment for user with an ID of 2`() {
         val resultActions: ResultActions = getInvestments(investorId)
         resultActions.andExpect(status().isOk)
 
@@ -313,7 +317,7 @@ class InvestApplicationTests {
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
 
-        for (i in 10L..19L) {
+        for (i in 1L..10L) {
             futures.add(executorService.submit<Boolean> {
                 var result = true
                 val resultActions = getInvestments(i)
@@ -346,18 +350,16 @@ class InvestApplicationTests {
         assert(futures.stream().filter { it.get() == false }.count() == 0L)
     }
 
-    // TODO : handle @Transactional (for rollback) in multi-thread test.
-    // `we should get 23 product ...` test fails because of this test
     @Test
     fun `we should handle multiple request for creating investments`() {
         val latch = CountDownLatch(10)
         val executorService: ExecutorService = Executors.newFixedThreadPool(10)
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
-        for (i in 20L..29L) {
+        for (i in 3L..12L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
-                val resultActions = createInvestment(i, i - 10, 100 + i.toInt())
+                val resultActions = createInvestment(i, dummyProductId + i - 3, 100 + i.toInt())
 
                 result = resultActions.andReturn().response.status == HttpStatus.CREATED.value()
 
@@ -381,11 +383,11 @@ class InvestApplicationTests {
         val content: String = resultActions.andReturn().response.contentAsString
         val products: TestSliceImpl<ProductDTO.Response> = objectMapper.readValue(content)
 
-        val updatedProducts: List<ProductDTO.Response> = products.content.stream().filter { it.id in 10L..19L }.toList()
+        val updatedProducts: List<ProductDTO.Response> =
+            products.content.stream().filter { it.id in dummyProductId..dummyProductId + 9 }.toList()
         assert(updatedProducts.size == 10)
         for (i in 0..9) {
-            val id: Long = updatedProducts[i].id!!
-            assert(updatedProducts[i].currentInvestingAmount == 110 + id.toInt())
+            assert(updatedProducts[i].currentInvestingAmount == 103 + i)
             assert(updatedProducts[i].investorCount == 1)
             assert(!updatedProducts[i].soldOut)
         }
@@ -398,7 +400,7 @@ class InvestApplicationTests {
         val counter = AtomicInteger(0)
         val futures: ArrayList<Future<Boolean>> = arrayListOf()
 
-        for (i in 20L..29L) {
+        for (i in 3L..12L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
                 val resultActions: ResultActions = createInvestment(i, lastChanceProductId, 1)
@@ -493,8 +495,6 @@ class InvestApplicationTests {
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
     }
 
-    // TODO: test create product and investment with invalid userid or invalid authentication
-
     private fun signUp(name: String, password: String): ResultActions {
         return mvc.perform(
             post("/signup")
@@ -519,7 +519,7 @@ class InvestApplicationTests {
         startedAt: LocalDateTime,
         finishedAt: LocalDateTime
     ): ResultActions {
-        val user = InvestorDTO.Data(userId, "test", "password", userRole)
+        val user = InvestorDTO.Data(userId, "user${userId}", "encoded_password", userRole)
 
         return mvc.perform(
             post("/product")
@@ -533,7 +533,7 @@ class InvestApplicationTests {
     }
 
     private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
-        val user = InvestorDTO.Data(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "user${userId}", "encoded_password", "USER")
 
         return mvc.perform(
             post("/investment")
@@ -545,7 +545,7 @@ class InvestApplicationTests {
     }
 
     private fun getInvestments(userId: Long): ResultActions {
-        val user = InvestorDTO.Data(userId, "test", "password", "USER")
+        val user = InvestorDTO.Data(userId, "test${userId}", "encoded_password", "USER")
 
         return mvc.perform(
             get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)

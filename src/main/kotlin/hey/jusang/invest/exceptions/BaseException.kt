@@ -37,3 +37,6 @@ class InvalidTotalInvestingAmountException :
 
 class InvalidInvestingPeriodException :
     BaseException(ErrorCode.INVALID_INVESTING_PERIOD, HttpStatus.BAD_REQUEST, "Investing period is invalid")
+
+class InvalidAuthInformationException :
+    BaseException(ErrorCode.INVALID_AUTH_INFORMATION, HttpStatus.UNAUTHORIZED, "Invalid Auth Information is given")

@@ -17,7 +17,7 @@ class JwtAuthenticationFilter(val jwtTokenProvider: JwtTokenProvider) : OncePerR
     ) {
         val token: String? = jwtTokenProvider.resolveToken(request)
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (token != null && jwtTokenProvider.validateTokenExpiration(token)) {
             SecurityContextHolder.getContext().authentication = jwtTokenProvider.getAuthentication(token)
         }
 

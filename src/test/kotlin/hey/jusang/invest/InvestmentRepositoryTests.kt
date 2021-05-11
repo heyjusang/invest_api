@@ -18,13 +18,13 @@ class InvestmentRepositoryTests {
     }
 
     @Test
-    fun `we should get 2 investments when requesting a list of investment for user with an ID of 10`() {
-        val investments: List<Investment> = testRepository.findAllByUserId(10)
+    fun `we should get 2 investments when requesting a list of investment for user with an ID of 2`() {
+        val investments: List<Investment> = testRepository.findAllByUserId(2)
         assert(investments.size == 2)
 
         for (investment in investments) {
             assert(investment.amount > 0)
-            assert(investment.userId == 10L)
+            assert(investment.userId == 2L)
         }
     }
 

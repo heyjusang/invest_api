@@ -257,6 +257,10 @@
 ### utils/
 * JwtTokenProvider
   * JWT의 생성, 추출, 검증 및 User Authentication 생성을 담당
+* InvestUserDetails
+  * User 인증 정보
+* InvestUserDetailsService
+  * InvestUserDetails 생성
 
 ### filters/
 * JwtAuthenticationFilter
@@ -333,7 +337,7 @@
 | 테스트 이름 | 테스트 내용 |
 |---|---|
 |testRepository should be configured() | 환경 테스트 |
-|we should get 2 investments when requesting a list of investment for user with an ID of 10()| getInvestments() 테스트|
+|we should get 2 investments when requesting a list of investment for user with an ID of 2()| getInvestments() 테스트|
 |we should create investment| createInvestment() 테스트|
 |we cannot create investment having same user id and same product id| createInvestment() 실패 테스트 - 동일 유저가 동일 상품 투자|
 |we cannot create investment having negative amount| createInvestment() 실패 테스트 - 음수의 금액 투자|
@@ -451,7 +455,7 @@
 |we cannot create product with empty title| 빈 제목 상품 생성 테스트|
 |we cannot create product with invalid total investing amount| 0 이하 상품 생성 테스트|
 |we cannot create product with invalid investing period| 잘못된 기간 상품 생성 테스트|
-|we should get 2 investments when requesting a list of investment for user with an ID of 10| 투자 내역 조회 테스트|
+|we should get 2 investments when requesting a list of investment for user with an ID of 2| 투자 내역 조회 테스트|
 |we should create investment and get 1 investment when requesting a list of investment| 투자 후 투자내역 생겼는지 테스트|
 |we should create investment and updated product should be returned when request a list of product| 투자 후 상품 업데이트 되었는지 테스트|
 |we cannot create investment with invalid amount| 0 이하 금액 투자 테스트|
