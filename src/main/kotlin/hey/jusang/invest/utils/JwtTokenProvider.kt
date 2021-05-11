@@ -1,5 +1,6 @@
 package hey.jusang.invest.utils
 
+import hey.jusang.invest.exceptions.InvalidAuthInformationException
 import hey.jusang.invest.models.InvestorDTO
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
@@ -31,7 +32,6 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
     fun createToken(investor: InvestorDTO.Data): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(investor.id.toString())
-        // TODO : need ?
         claims["name"] = investor.id.toString()
         claims["password"] = investor.encryptedPassword
         claims["role"] = investor.role
@@ -47,9 +47,10 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
     fun getAuthentication(token: String): Authentication {
         val claims: Claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
         val id: String = claims.subject
-
-        // TODO: ROLE_ADMIN
         val userDetails: UserDetails = investUserDetailsService.loadUserByUsername(id)
+
+        validateTokenDetails(claims, userDetails)
+
         return UsernamePasswordAuthenticationToken(userDetails, userDetails.password, userDetails.authorities)
     }
 
@@ -57,7 +58,7 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
         return request.getHeader("X-AUTH-TOKEN")
     }
 
-    fun validateToken(token: String): Boolean {
+    fun validateTokenExpiration(token: String): Boolean {
         return try {
             val claims: Jws<Claims> = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token)
 
@@ -65,5 +66,21 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    private fun validateTokenDetails(claims: Claims, user: UserDetails): Boolean {
+        if (claims["name"] != user.username) {
+            throw InvalidAuthInformationException()
+        }
+
+        if (claims["password"] != user.password) {
+            throw InvalidAuthInformationException()
+        }
+
+        if (!user.authorities.any { it.authority == "ROLE_${claims["role"]}" }) {
+            throw InvalidAuthInformationException()
+        }
+
+        return true
     }
 }

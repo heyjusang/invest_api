@@ -12,7 +12,10 @@ class InvestUserDetails(
     private val authorities: MutableCollection<GrantedAuthority> = mutableListOf()
 
     constructor(investor: Investor) : this(investor.id.toString(), investor.password) {
-        // TODO
+        // TODO: enum ? collection ?
+        if (investor.role == "ADMIN") {
+            authorities.add(SimpleGrantedAuthority("ROLE_USER"))
+        }
         authorities.add(SimpleGrantedAuthority("ROLE_${investor.role}"))
     }
 
