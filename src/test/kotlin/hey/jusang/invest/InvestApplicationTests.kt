@@ -93,7 +93,7 @@ class InvestApplicationTests {
     @Test
     fun `we should create product`() {
         val resultActions: ResultActions = createProduct(
-            1, "ADMIN", "product name", 10000,
+            adminId, createAdminToken(), "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -108,7 +108,7 @@ class InvestApplicationTests {
     @Test
     fun `we cannot create product with role of USER`() {
         createProduct(
-            newInvestorId, "USER", "product name", 10000,
+            newInvestorId, createUserToken(newInvestorId), "product name", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -118,7 +118,7 @@ class InvestApplicationTests {
     @Test
     fun `we cannot create product with empty title`() {
         createProduct(
-            1, "ADMIN", "", 10000,
+            adminId, createAdminToken(), "", 10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -130,7 +130,7 @@ class InvestApplicationTests {
     @Test
     fun `we cannot create product with invalid total investing amount`() {
         createProduct(
-            1, "ADMIN", "product name", -10000,
+            adminId, createAdminToken(), "product name", -10000,
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11),
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11)
         )
@@ -142,7 +142,7 @@ class InvestApplicationTests {
     @Test
     fun `we cannot create product with invalid investing period`() {
         createProduct(
-            1, "ADMIN", "product name", 10000,
+            adminId, createAdminToken(), "product name", 10000,
             LocalDateTime.of(2022, Month.MARCH, 21, 5, 11, 11),
             LocalDateTime.of(2020, Month.MARCH, 20, 12, 11, 11)
         )
@@ -153,7 +153,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we should get 2 investments when requesting a list of investment for user with an ID of 2`() {
-        val resultActions: ResultActions = getInvestments(investorId)
+        val resultActions: ResultActions = getInvestments(investorId, createUserToken(investorId))
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString
@@ -169,7 +169,8 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create investment and get 1 investment when requesting a list of investment`() {
-        val resultActions: ResultActions = createInvestment(newInvestorId, normalProductId, 10000)
+        val token: String = createUserToken(newInvestorId)
+        val resultActions: ResultActions = createInvestment(newInvestorId, token, normalProductId, 10000)
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
@@ -179,7 +180,7 @@ class InvestApplicationTests {
         assert(investment.productId == normalProductId)
         assert(investment.amount == 10000)
 
-        val resultActions2: ResultActions = getInvestments(newInvestorId)
+        val resultActions2: ResultActions = getInvestments(newInvestorId, token)
         resultActions2.andExpect(status().isOk)
 
         val content2: String = resultActions2.andReturn().response.contentAsString
@@ -193,7 +194,8 @@ class InvestApplicationTests {
 
     @Test
     fun `we should create investment and updated product should be returned when request a list of product`() {
-        val resultActions: ResultActions = createInvestment(newInvestorId, lastChanceProductId, 1)
+        val token: String = createUserToken(newInvestorId)
+        val resultActions: ResultActions = createInvestment(newInvestorId, token, lastChanceProductId, 1)
         resultActions.andExpect(status().isCreated)
 
         val content: String = resultActions.andReturn().response.contentAsString
@@ -219,7 +221,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment with invalid amount`() {
-        createInvestment(newInvestorId, normalProductId, -1)
+        createInvestment(newInvestorId, createUserToken(newInvestorId), normalProductId, -1)
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_AMOUNT))
@@ -230,7 +232,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment with invalid product id`() {
-        createInvestment(newInvestorId, invalidProductId, 10000)
+        createInvestment(newInvestorId, createUserToken(newInvestorId), invalidProductId, 10000)
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.PRODUCT_NOT_FOUND))
@@ -241,7 +243,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment with not opened product`() {
-        createInvestment(newInvestorId, notOpenedProductId, 10000)
+        createInvestment(newInvestorId, createUserToken(newInvestorId), notOpenedProductId, 10000)
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.PRODUCT_NOT_OPENED))
@@ -251,7 +253,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment with closed product`() {
-        createInvestment(newInvestorId, closedProductId, 10000)
+        createInvestment(newInvestorId, createUserToken(newInvestorId), closedProductId, 10000)
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.PRODUCT_CLOSED))
@@ -261,7 +263,7 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment with exceeded amount`() {
-        createInvestment(newInvestorId, lastChanceProductId, 10000)
+        createInvestment(newInvestorId, createUserToken(newInvestorId), lastChanceProductId, 10000)
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$").isNotEmpty)
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.TOTAL_INVESTING_AMOUNT_EXCEEDED))
@@ -272,10 +274,11 @@ class InvestApplicationTests {
 
     @Test
     fun `we cannot create investment having same user id and same product id`() {
-        createInvestment(newInvestorId, normalProductId, 10000)
+        val token: String = createUserToken(newInvestorId)
+        createInvestment(newInvestorId, token, normalProductId, 10000)
             .andExpect(status().isCreated)
 
-        createInvestment(newInvestorId, normalProductId, 10000)
+        createInvestment(newInvestorId, token, normalProductId, 10000)
             .andExpect(status().isInternalServerError)
     }
 
@@ -320,7 +323,7 @@ class InvestApplicationTests {
         for (i in 1L..10L) {
             futures.add(executorService.submit<Boolean> {
                 var result = true
-                val resultActions = getInvestments(i)
+                val resultActions = getInvestments(i, createUserToken(i))
 
                 if (resultActions.andReturn().response.status != HttpStatus.OK.value()) {
                     result = false
@@ -359,7 +362,7 @@ class InvestApplicationTests {
         for (i in 3L..12L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
-                val resultActions = createInvestment(i, dummyProductId + i - 3, 100 + i.toInt())
+                val resultActions = createInvestment(i, createUserToken(i), dummyProductId + i - 3, 100 + i.toInt())
 
                 result = resultActions.andReturn().response.status == HttpStatus.CREATED.value()
 
@@ -403,7 +406,7 @@ class InvestApplicationTests {
         for (i in 3L..12L) {
             futures.add(executorService.submit<Boolean> {
                 val result: Boolean
-                val resultActions: ResultActions = createInvestment(i, lastChanceProductId, 1)
+                val resultActions: ResultActions = createInvestment(i, createUserToken(i), lastChanceProductId, 1)
 
                 result = resultActions.andReturn().response.status == HttpStatus.CREATED.value()
 
@@ -495,6 +498,46 @@ class InvestApplicationTests {
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
     }
 
+    @Test
+    fun `we cannot call api using auth token having different user id with X-USER-ID`() {
+        val token: String = createToken(adminId, "ADMIN","user1", "encoded_password")
+        getInvestments(investorId, token)
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.FORBIDDEN_REQUEST))
+    }
+
+    @Test
+    fun `we cannot call api using auth token having invalid password`() {
+        val token: String = createToken(adminId, "ADMIN","user1", "wrong_password")
+        getInvestments(adminId, token)
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_AUTH_INFORMATION))
+    }
+
+    @Test
+    fun `we cannot call api using auth token having invalid role`() {
+        val token: String = createToken(investorId, "ADMIN","user2", "encoded_password")
+        getInvestments(investorId, token)
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_AUTH_INFORMATION))
+    }
+
+    private fun createAdminToken(): String {
+        return createToken(adminId, "ADMIN", "user1", "encoded_password")
+    }
+
+    private fun createUserToken(userId: Long): String {
+        return createToken(userId, "USER", "user${userId}", "encoded_password")
+    }
+
+    private fun createToken(userId: Long, userRole: String, userName: String, encodedPassword: String): String {
+        val user = InvestorDTO.Data(userId, userName, encodedPassword, userRole)
+        return jwtTokenProvider.createToken(user)
+    }
+
     private fun signUp(name: String, password: String): ResultActions {
         return mvc.perform(
             post("/signup")
@@ -513,17 +556,15 @@ class InvestApplicationTests {
 
     private fun createProduct(
         userId: Long,
-        userRole: String,
+        token: String,
         title: String?,
         totalInvestingAmount: Int,
         startedAt: LocalDateTime,
         finishedAt: LocalDateTime
     ): ResultActions {
-        val user = InvestorDTO.Data(userId, "user${userId}", "encoded_password", userRole)
-
         return mvc.perform(
             post("/product")
-                .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
+                .header("X-AUTH-TOKEN", token)
                 .header("X-USER-ID", userId)
                 .param("title", title)
                 .param("totalInvestingAmount", totalInvestingAmount.toString())
@@ -532,23 +573,19 @@ class InvestApplicationTests {
         )
     }
 
-    private fun createInvestment(userId: Long, productId: Long, amount: Int): ResultActions {
-        val user = InvestorDTO.Data(userId, "user${userId}", "encoded_password", "USER")
-
+    private fun createInvestment(userId: Long, token: String, productId: Long, amount: Int): ResultActions {
         return mvc.perform(
             post("/investment")
-                .header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user))
+                .header("X-AUTH-TOKEN", token)
                 .header("X-USER-ID", userId)
                 .param("productId", productId.toString())
                 .param("amount", amount.toString())
         )
     }
 
-    private fun getInvestments(userId: Long): ResultActions {
-        val user = InvestorDTO.Data(userId, "test${userId}", "encoded_password", "USER")
-
+    private fun getInvestments(userId: Long, token: String): ResultActions {
         return mvc.perform(
-            get("/investments").header("X-AUTH-TOKEN", jwtTokenProvider.createToken(user)).header("X-USER-ID", userId)
+            get("/investments").header("X-AUTH-TOKEN", token).header("X-USER-ID", userId)
         )
     }
 
@@ -557,7 +594,7 @@ class InvestApplicationTests {
     }
 
     private fun checkInvestmentNotCreated(userId: Long) {
-        val resultActions: ResultActions = getInvestments(userId)
+        val resultActions: ResultActions = getInvestments(userId, createUserToken(userId))
         resultActions.andExpect(status().isOk)
 
         val content: String = resultActions.andReturn().response.contentAsString

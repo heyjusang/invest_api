@@ -16,7 +16,7 @@ class InvestorRepositoryTests {
     }
 
     @Test
-    fun `we should get 1 investor when requesting investor whose name is hey`() {
+    fun `we should get 1 investor when requesting investor whose name is user1`() {
         val investor: Investor = testRepository.findByName("user1").get()
 
         assert(investor.name == "user1")
@@ -30,7 +30,7 @@ class InvestorRepositoryTests {
     }
 
     @Test
-    fun `we should get 1 when requesting count of investor whose name is hey`() {
+    fun `we should get 1 when requesting count of investor whose name is user1`() {
         val count: Long = testRepository.countByName("user1")
 
         assert(count == 1L)

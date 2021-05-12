@@ -265,10 +265,12 @@
 ### filters/
 * JwtAuthenticationFilter
   * JwtTokenProvider를 이용하여 Http request로부터 토큰 추출, 검증 후 Authentication 설정
+* ExceptionFilter
+  * JwtAuthenticationFilter 과정 중 Exception 발생시, 사용자에게 response로 변환하여 전달
 
 ### configs/
 * SecurityConfiguration
-  * UsernamePasswordAutenticationFilter 수행 전 JwtAutenticationFilter 사용
+  * UsernamePasswordAutenticationFilter 수행 전 ExceptionFilter, JwtAutenticationFilter 사용
 * DateTimeFormatConfiguration
   * Request param으로 DateTime 넘어올 때 ISO format으로 parsing되도록 처리
 
@@ -312,10 +314,10 @@
 * 에러 발생 시 BaseException 리턴
 
 ## Test
-* 총 94개 테스트
+* 총 97개 테스트
 
 ### ProductRepositoryTests
-* 6개 테스트
+* 9개 테스트
 * Repository Layer 기능 검사를 위한 단위 테스트
 
 | 테스트 이름 | 테스트 내용 |
@@ -326,9 +328,9 @@
 |we cannot get product without proper ID| seleectProductForUpdate() 실패 테스트 - 없는 상품|
 |we should update product with an ID of 1| updateProduct() 테스트|
 |we cannot update product over total investing amount| updateProduct() 실패 테스트 - 금액 초과|
-|we should create product| |
-|we cannot create product with negative total investing amount||
-|we cannot create product with wrong range date||
+|we should create product| createProduct() 테스트 |
+|we cannot create product with negative total investing amount| createProduct() 실패 테스트 - 음수 금액 |
+|we cannot create product with wrong range date| createProduct() 실패 테스트 - 잘못된 투자 기간 |
 
 
 ### InvestmentRepositoryTests
@@ -349,9 +351,9 @@
 | 테스트 이름 | 테스트 내용 |
 |---|---|
 |testRepository should be configured() | 환경 테스트 |
-|we should get 1 investor when requesting investor whose name is hey| selectUserByName() 테스트|
+|we should get 1 investor when requesting investor whose name is user1 | selectUserByName() 테스트|
 |we cannot get investor without proper name| selectUserByName() 없는 이름 테스트|
-|we should get 1 when requesting count of investor whose name is hey| selectUserCountByName() 테스트|
+|we should get 1 when requesting count of investor whose name is user1 | selectUserCountByName() 테스트|
 |we should create investor| insertUser() 테스트|
 
 ### ProductServiceTests
@@ -390,7 +392,7 @@
 |we should get token when signing in| signIn() 테스트|
 |we should sign up| signUp() 테스트|
 |we should get UserNotFoundException when signing in with wrong name| signIn() 실패 테스트 - 없는 유저|
-|we should get WrongPasswordException when signing in with wrong password signIn() 실패 테스트 - 비밀번호 오류|
+|we should get WrongPasswordException when signing in with wrong password | signIn() 실패 테스트 - 비밀번호 오류|
 |we should get UserAlreadyExistedException when sign up with existed name| signUp() 실패 테스트 - 이미 있는 유저 이름|
 
 ### ProductControllerTests
@@ -443,7 +445,7 @@
 |we should handle UserAlreadyExistedException while signing up with existed name| [POST] /signup 중 UserAlreadyExistedException 에러 리턴 테스트|
 
 ### InvestApplicationTests
-* 24개 테스트
+* 27개 테스트
 * 실제 Application 단위의 통합 테스트
 
 | 테스트 이름| 테스트 내용|
@@ -472,7 +474,9 @@
 |we should sign in| 로그인 테스트|
 |we cannot sign in with wrong user name| 없는 아이디로 로그인 테스트|
 |we cannot sign in with wrong password| 잘못된 비밀번호로 로그인 테스트|
-
+|we cannot call api using auth token having different user id with X-USER-ID | X-USER-ID와 X-AUTH-TOKEN 정보 다른 경우 api 호출 실패 테스트|
+|we cannot call api using auth token having invalid password| 잘못된 비밀번호로 X-AUTH-TOKEN 생성했을 때, api 호출 실패 테스트|
+|we cannot call api using auth token having invalid role|잘못된 role로 X-AUTH-TOKEN 생성했을 때, api 호출 실패 테스트 |
 
 
 
