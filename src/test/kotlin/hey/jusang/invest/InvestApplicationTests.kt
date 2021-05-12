@@ -498,6 +498,33 @@ class InvestApplicationTests {
             .andExpect(jsonPath("$.errorCode").value(ErrorCode.WRONG_PASSWORD))
     }
 
+    @Test
+    fun `we cannot call api using auth token having different user id with X-USER-ID`() {
+        val token: String = createToken(adminId, "ADMIN","user1", "encoded_password")
+        getInvestments(investorId, token)
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.FORBIDDEN_REQUEST))
+    }
+
+    @Test
+    fun `we cannot call api using auth token having invalid password`() {
+        val token: String = createToken(adminId, "ADMIN","user1", "wrong_password")
+        getInvestments(adminId, token)
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_AUTH_INFORMATION))
+    }
+
+    @Test
+    fun `we cannot call api using auth token having invalid role`() {
+        val token: String = createToken(investorId, "ADMIN","user2", "encoded_password")
+        getInvestments(investorId, token)
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$").isNotEmpty)
+            .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_AUTH_INFORMATION))
+    }
+
     private fun createAdminToken(): String {
         return createToken(adminId, "ADMIN", "user1", "encoded_password")
     }

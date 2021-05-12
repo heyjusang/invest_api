@@ -32,7 +32,6 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
     fun createToken(investor: InvestorDTO.Data): String {
         val now = Date()
         val claims: Claims = Jwts.claims().setSubject(investor.id.toString())
-        claims["name"] = investor.id.toString()
         claims["password"] = investor.encryptedPassword
         claims["role"] = investor.role
 
@@ -69,10 +68,6 @@ class JwtTokenProvider(val investUserDetailsService: InvestUserDetailsService) {
     }
 
     private fun validateTokenDetails(claims: Claims, user: UserDetails): Boolean {
-        if (claims["name"] != user.username) {
-            throw InvalidAuthInformationException()
-        }
-
         if (claims["password"] != user.password) {
             throw InvalidAuthInformationException()
         }
